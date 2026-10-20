@@ -1,5 +1,6 @@
-*~
-Lab1_bin
+lab2
+program
+lab2.o
 *.o
-*.out
-a.out
+diary.txt
+output.txt
