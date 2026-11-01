@@ -11,9 +11,8 @@
 #define HOURS_IN_DAY     24
 #define START_DAY        1
 #define START_HOUR       8
-#define MAX_ITEMS        10
+#define MAX_ITEMS        11 // 11 предметов, включая Кирку
 #define MAX_NAME_LEN     32
-#define MAX_FARMER_NAME  32
 #define MAX_PRICE_ITEMS  50
 #define MAX_PRICE_LEN    32
 
@@ -28,29 +27,39 @@
 #define ITEM_ROPE   7
 #define ITEM_TORCH  8
 #define ITEM_GOLD   9
+#define ITEM_PICKAXE 10 // Новая кирка
 
 // ===== ЛР4: Константы карты =====
 #define MAP_MIN_SIZE      5
 #define MAP_MAX_SIZE      30
 
-#define TOWER_WALL       '#'
+#define TOWER_WALL       '*'   // Изменено на *
 #define TOWER_FLOOR      '.'
-#define TOWER_HERO       '@'
-#define TOWER_STAIR_UP   'U'   // лестница вверх (новый этаж)
-#define TOWER_STAIR_DOWN 'D'   // лестница вниз (выход домой)
-#define TOWER_SWITCH     'X'   // переключатель (убирает стену)
-#define TOWER_MIRROR     '|'   // разделительная стена (вертикальная)
-#define TOWER_MIRROR_H   '-'   // разделительная стена (горизонтальная)
+#define TOWER_HERO       '@'   //я собака
+#define TOWER_STAIR_UP   'H'   // Изменено на H
+#define TOWER_STAIR_DOWN 'D'
+#define TOWER_SWITCH     'X'
+#define TOWER_MIRROR     '|'
+#define TOWER_MIRROR_H   '-'
+#define TOWER_ROCK       '#'   // Новый камень
+#define TOWER_STONE_BROKEN 'S' // Сломанный камень
 
 #define TOWER_OBSTACLE_MIN 10
 #define TOWER_OBSTACLE_MAX 25
+
+// ===== Выбор персонажа =====
+#define MAX_CHAR_NAME  32
+#define CHAR_COUNT     4
 
 // Глобальное состояние
 int current_day  = START_DAY;
 int current_hour = START_HOUR;
 int inventory[INVENTORY_SIZE] = {0};
-char farmer_name[MAX_FARMER_NAME] = "Фермер";
 char item_names[MAX_ITEMS][MAX_NAME_LEN];
+
+// Данные о персонаже
+char player_name[MAX_CHAR_NAME] = "Анна";
+int  player_choice = 1;
 
 // ===== ЛР4: Структура башни =====
 typedef struct {
@@ -58,20 +67,22 @@ typedef struct {
     int    height;
     int    width;
     int    hero_x, hero_y;
-    int    split_vertical;   // 1 — стена вертикальная, 0 — горизонтальная
-    int    split_pos;        // координата разделительной стены
-    int    mirror_broken;    // 1 — переключатель уже нажат
-    int    floor;            // номер этажа
+    int    split_vertical;
+    int    split_pos;
+    int    mirror_broken;
+    int    floor;
 } TowerState;
 
-// Прототипы (ЛР2-3)
+// Прототипы
 int  readInt(int *value);
 void readLine(char *buf, int size);
 void loadItemNames(void);
-void askFarmerName(void);
+void askCharacter(void);
 void showMenu(void);
+void inventoryMenu(void);
 void showTime(void);
 void workHours(void);
+void add_one_hour(void); // Новая функция
 void showInventory(void);
 void putItem(void);
 void dropItem(void);
@@ -79,7 +90,6 @@ void findItemByName(void);
 void writeDiary(void);
 void variantTask(void);
 
-// Прототипы (ЛР4)
 char **allocateMap(int height, int width);
 void   freeMap(char **map, int height);
 int    towerGenerate(TowerState *t);
@@ -95,7 +105,10 @@ int main(void) {
     srand((unsigned)time(NULL));
 
     loadItemNames();
-    askFarmerName();
+    askCharacter();
+    
+    // Даём кирку в первый слот
+    inventory[0] = ITEM_PICKAXE;
 
     int choice;
     while (1) {
@@ -110,10 +123,7 @@ int main(void) {
                 return 0;
             case 1: showTime();        break;
             case 2: workHours();       break;
-            case 3: showInventory();   break;
-            case 4: putItem();         break;
-            case 5: dropItem();        break;
-            case 6: findItemByName();  break;
+            case 3: inventoryMenu();   break;
             case 7: writeDiary();      break;
             case 8: variantTask();     break;
             case 10: towerAdventure(); break;
@@ -145,7 +155,7 @@ void readLine(char *buf, int size) {
 void loadItemNames(void) {
     const char *defaults[MAX_ITEMS] = {
         "Пусто", "Дерево", "Камень", "Семена", "Железо",
-        "Вода", "Еда", "Веревка", "Факел", "Золото"
+        "Вода", "Еда", "Веревка", "Факел", "Золото", "Кирка"
     };
     for (int i = 0; i < MAX_ITEMS; i++) {
         strncpy(item_names[i], defaults[i], MAX_NAME_LEN - 1);
@@ -172,32 +182,79 @@ void loadItemNames(void) {
     printf("Каталог предметов загружен из items.txt\n");
 }
 
-// ===== Имя фермера =====
-void askFarmerName(void) {
-    printf("Введите имя весёлого фермера (до %d символов): ", MAX_FARMER_NAME - 1);
-    readLine(farmer_name, sizeof(farmer_name));
-    if (strlen(farmer_name) == 0) {
-        strncpy(farmer_name, "Фермер", MAX_FARMER_NAME - 1);
-        farmer_name[MAX_FARMER_NAME - 1] = '\0';
+// ===== Выбор персонажа =====
+void askCharacter(void) {
+    printf("\nВыберите персонажа:\n");
+    printf("1 - Анна\n");
+    printf("2 - Кот\n");
+    printf("3 - Ёж\n");
+    printf("4 - Сосиска\n");
+
+    int choice;
+    while (1) {
+        printf("Введите номер (1-4): ");
+        if (readInt(&choice)) {
+            if (choice >= 1 && choice <= CHAR_COUNT) {
+                player_choice = choice;
+                break;
+            }
+        }
+        printf("Ошибка: нужно ввести число от 1 до 4.\n");
     }
-    printf("Привет, %s!\n", farmer_name);
+
+    switch (player_choice) {
+        case 1: strcpy(player_name, "Анна"); break;
+        case 2: strcpy(player_name, "Кот"); break;
+        case 3: strcpy(player_name, "Ёж"); break;
+        case 4: strcpy(player_name, "Сосиска"); break;
+        default: strcpy(player_name, "Анна"); break;
+    }
+
+    printf("Вы выбрали: %s!\n", player_name);
 }
 
 // ===== Меню =====
 void showMenu(void) {
-    printf("\n===== Фермер: %s | День %d, %02d:00 =====\n",
-           farmer_name, current_day, current_hour);
+    printf("\n===== Игрок: %s | День %d, %02d:00 =====\n",
+           player_name, current_day, current_hour);
     printf("[0] Выход\n");
     printf("[1] Посмотреть на часы\n");
-    printf("[2] Промотать время (Поработать)\n");
-    printf("[3] Посмотреть инвентарь\n");
-    printf("[4] Положить предмет в слот\n");
-    printf("[5] Выбросить предмет\n");
-    printf("[6] Поиск предмета по названию\n");
+    printf("[2] Поспать\n");
+    printf("[3] Инвентарь\n");
     printf("[7] Записать в дневник\n");
     printf("[8] Оценка рюкзака у скупщика\n");
     printf("[10] Войти в башню (Зеркальная комната)\n");
     printf("Выбор: ");
+}
+
+// ===== Подменю инвентаря =====
+void inventoryMenu(void) {
+    int choice;
+    while (1) {
+        printf("\n--- Инвентарь ---\n");
+        printf("[1] Посмотреть содержимое\n");
+        printf("[2] Положить предмет в слот\n");
+        printf("[3] Выбросить предмет\n");
+        printf("[4] Поиск предмета по названию\n");
+        printf("[0] Назад в главное меню\n");
+        printf("Выбор: ");
+
+        if (!readInt(&choice)) {
+            printf("Ошибка: нужно ввести число.\n");
+            continue;
+        }
+
+        switch (choice) {
+            case 0:
+                return;
+            case 1: showInventory();   break;
+            case 2: putItem();         break;
+            case 3: dropItem();        break;
+            case 4: findItemByName();  break;
+            default:
+                printf("Нет такого пункта меню.\n");
+        }
+    }
 }
 
 // ===== Время =====
@@ -205,15 +262,24 @@ void showTime(void) {
     printf("Текущее время: День %d, %02d:00\n", current_day, current_hour);
 }
 
+void add_one_hour(void) {
+    current_hour++;
+    if (current_hour >= HOURS_IN_DAY) {
+        current_hour = 0;
+        current_day++;
+    }
+    printf("Время идёт... Сейчас: День %d, %02d:00\n", current_day, current_hour);
+}
+
 void workHours(void) {
     int hours;
-    printf("Сколько часов работаем? ");
+    printf("Сколько часов спим? ");
     if (!readInt(&hours)) {
         printf("Ошибка: нужно ввести число.\n");
         return;
     }
     if (hours < 0) {
-        printf("Нельзя работать отрицательное время.\n");
+        printf("Нельзя спать отрицательное время.\n");
         return;
     }
     current_hour += hours;
@@ -260,7 +326,7 @@ void putItem(void) {
 
 void dropItem(void) {
     int slot;
-    printf("Индекс слота (0..%d): ", INVENTORY_SIZE - 1);
+    printf("Выбрасываем из слота 0-%d: ", INVENTORY_SIZE - 1);
     if (!readInt(&slot)) {
         printf("Ошибка: нужно ввести число.\n");
         return;
@@ -270,12 +336,19 @@ void dropItem(void) {
         return;
     }
     inventory[slot] = ITEM_EMPTY;
-    printf("Слот %d очищен.\n", slot);
+    printf("Предмет потерян навсегда.\n");
 }
 
 // ===== Поиск по названию =====
 void findItemByName(void) {
     char query[MAX_NAME_LEN];
+    
+    printf("\nДоступные предметы:\n");
+    for (int i = 1; i < MAX_ITEMS; i++) {
+        printf("- %s\n", item_names[i]);
+    }
+    printf("\n");
+
     printf("Введите название предмета: ");
     if (scanf("%31s", query) != 1) {
         while (getchar() != '\n');
@@ -314,7 +387,7 @@ void writeDiary(void) {
         return;
     }
     fprintf(f, "===== Запись =====\n");
-    fprintf(f, "Фермер: %s\n", farmer_name);
+    fprintf(f, "Персонаж: %s\n", player_name);
     fprintf(f, "День %d, %02d:00\n", current_day, current_hour);
     fprintf(f, "Инвентарь:\n");
     for (int i = 0; i < INVENTORY_SIZE; i++) {
@@ -398,7 +471,7 @@ void variantTask(void) {
     }
 
     fprintf(out, "Оценочная ведомость скупщика\n");
-    fprintf(out, "Фермер: %s\n", farmer_name);
+    fprintf(out, "Персонаж: %s\n", player_name);
     fprintf(out, "День %d, %02d:00\n\n", current_day, current_hour);
 
     for (int i = 0; i < INVENTORY_SIZE; i++) {
@@ -421,7 +494,6 @@ void variantTask(void) {
 // =================== ЛР4: ЗЕРКАЛЬНАЯ КОМНАТА =================
 // ============================================================
 
-// Выделение двумерного динамического массива
 char **allocateMap(int height, int width) {
     char **map = (char**)malloc(height * sizeof(char*));
     if (!map) {
@@ -440,7 +512,6 @@ char **allocateMap(int height, int width) {
     return map;
 }
 
-// Освобождение памяти (обратный порядок!)
 void freeMap(char **map, int height) {
     if (!map) return;
     for (int i = 0; i < height; i++) {
@@ -449,27 +520,21 @@ void freeMap(char **map, int height) {
     free(map);
 }
 
-// Генерация этажа башни
 int towerGenerate(TowerState *t) {
-    // Размер
     t->height = MAP_MIN_SIZE + rand() % (MAP_MAX_SIZE - MAP_MIN_SIZE + 1);
     t->width  = MAP_MIN_SIZE + rand() % (MAP_MAX_SIZE - MAP_MIN_SIZE + 1);
-    // Минимум 7x7, чтобы было где развернуться
     if (t->height < 7) t->height = 7;
     if (t->width  < 7) t->width  = 7;
-    // Убедимся, что размеры чётные для симметрии (не обязательно, но удобно)
     if (t->height % 2 == 0) t->height++;
     if (t->width  % 2 == 0) t->width++;
 
     t->map = allocateMap(t->height, t->width);
     if (!t->map) return 0;
 
-    // Всё — пол
     for (int y = 0; y < t->height; y++)
         for (int x = 0; x < t->width; x++)
             t->map[y][x] = TOWER_FLOOR;
 
-    // Границы — стены
     for (int y = 0; y < t->height; y++) {
         t->map[y][0] = TOWER_WALL;
         t->map[y][t->width - 1] = TOWER_WALL;
@@ -479,7 +544,6 @@ int towerGenerate(TowerState *t) {
         t->map[t->height - 1][x] = TOWER_WALL;
     }
 
-    // Ориентация разделительной стены
     t->split_vertical = rand() % 2;
     t->mirror_broken = 0;
 
@@ -487,18 +551,19 @@ int towerGenerate(TowerState *t) {
         rand() % (TOWER_OBSTACLE_MAX - TOWER_OBSTACLE_MIN + 1);
 
     if (t->split_vertical) {
-        // Вертикальная стена по центру
         t->split_pos = t->width / 2;
 
-        // Препятствия в первой половине (x in [1, split_pos-1])
         for (int y = 1; y < t->height - 1; y++) {
             for (int x = 1; x < t->split_pos; x++) {
-                if (rand() % 100 < obstacle_chance)
+                int r = rand() % 100;
+                if (r < obstacle_chance) {
                     t->map[y][x] = TOWER_WALL;
+                } else if (r < obstacle_chance + 5) {
+                    t->map[y][x] = TOWER_ROCK;
+                }
             }
         }
 
-        // Зеркальное отражение во вторую половину (относительно split_pos)
         int span = t->split_pos - 1;
         for (int y = 1; y < t->height - 1; y++) {
             for (int i = 0; i < span; i++) {
@@ -509,23 +574,23 @@ int towerGenerate(TowerState *t) {
             }
         }
 
-        // Разделительная стена
         for (int y = 0; y < t->height; y++)
             t->map[y][t->split_pos] = TOWER_MIRROR;
 
     } else {
-        // Горизонтальная стена по центру
         t->split_pos = t->height / 2;
 
-        // Препятствия в первой (верхней) половине
         for (int y = 1; y < t->split_pos; y++) {
             for (int x = 1; x < t->width - 1; x++) {
-                if (rand() % 100 < obstacle_chance)
+                int r = rand() % 100;
+                if (r < obstacle_chance) {
                     t->map[y][x] = TOWER_WALL;
+                } else if (r < obstacle_chance + 5) {
+                    t->map[y][x] = TOWER_ROCK;
+                }
             }
         }
 
-        // Зеркальное отражение во вторую (нижнюю) половину
         int span = t->split_pos - 1;
         for (int x = 1; x < t->width - 1; x++) {
             for (int i = 0; i < span; i++) {
@@ -536,12 +601,10 @@ int towerGenerate(TowerState *t) {
             }
         }
 
-        // Разделительная стена
         for (int x = 0; x < t->width; x++)
             t->map[t->split_pos][x] = TOWER_MIRROR_H;
     }
 
-    // --- Герой на "своей" половине + лестница вниз под ним ---
     int placed = 0;
     for (int attempts = 0; attempts < 2000 && !placed; attempts++) {
         int x, y;
@@ -560,7 +623,6 @@ int towerGenerate(TowerState *t) {
         }
     }
     if (!placed) {
-        // Fallback — первая свободная клетка на своей половине
         if (t->split_vertical) {
             for (int y = 1; y < t->height - 1 && !placed; y++)
                 for (int x = 1; x < t->split_pos && !placed; x++)
@@ -579,7 +641,6 @@ int towerGenerate(TowerState *t) {
         if (!placed) return 0;
     }
 
-    // --- Лестница вверх на своей половине ---
     placed = 0;
     for (int attempts = 0; attempts < 2000 && !placed; attempts++) {
         int x, y;
@@ -597,7 +658,6 @@ int towerGenerate(TowerState *t) {
         }
     }
 
-    // --- Переключатель на своей половине ---
     placed = 0;
     for (int attempts = 0; attempts < 2000 && !placed; attempts++) {
         int x, y;
@@ -617,7 +677,6 @@ int towerGenerate(TowerState *t) {
     return 1;
 }
 
-// Освобождение башни
 void towerFree(TowerState *t) {
     if (t->map) {
         freeMap(t->map, t->height);
@@ -625,7 +684,6 @@ void towerFree(TowerState *t) {
     }
 }
 
-// Отрисовка (герой поверх клетки)
 void towerPrint(const TowerState *t) {
     printf("\n===== Башня, этаж %d =====\n", t->floor);
     printf("Размер: %dx%d | Разделитель: %s | Переключатель: %s\n",
@@ -642,15 +700,13 @@ void towerPrint(const TowerState *t) {
         }
         putchar('\n');
     }
-    printf("W/A/S/D — движение, Q — выход домой (только на 'D')\n");
+    printf("W/A/S/D — движение, I — инвентарь, E — подобрать, Q — домой (на 'D')\n");
 }
 
-// Что под героем (символ карты в клетке героя)
 static char towerCellUnderHero(const TowerState *t) {
     return t->map[t->hero_y][t->hero_x];
 }
 
-// Проверки лестниц
 int towerCheckOnStairDown(const TowerState *t) {
     return towerCellUnderHero(t) == TOWER_STAIR_DOWN;
 }
@@ -658,7 +714,6 @@ int towerCheckOnStairUp(const TowerState *t) {
     return towerCellUnderHero(t) == TOWER_STAIR_UP;
 }
 
-// Перемещение
 int towerTryMove(TowerState *t, char dir) {
     int nx = t->hero_x, ny = t->hero_y;
     switch (dir) {
@@ -678,14 +733,31 @@ int towerTryMove(TowerState *t, char dir) {
 
     char cell = t->map[ny][nx];
 
-    // Стены и разделитель — нельзя
-    if (cell == TOWER_WALL || cell == TOWER_MIRROR ||
-        cell == TOWER_MIRROR_H) {
+    if (cell == TOWER_WALL || cell == TOWER_MIRROR || cell == TOWER_MIRROR_H) {
         printf("Стена — туда нельзя.\n");
         return 0;
     }
 
-    // Проверка "своей половины" (если разделитель ещё цел)
+    // Камень (в коде 4, но по смыслу 3 удара)
+    if (cell == TOWER_ROCK) {
+        static int hits = 0; // Счётчик ударов по текущей клетке
+        static int last_x = -1, last_y = -1;
+        if (nx != last_x || ny != last_y) {
+            hits = 0;
+            last_x = nx;
+            last_y = ny;
+        }
+        hits++;
+        if (hits < 4) { // В коде 4 (3 удара в тексте)
+            printf("Наткнулись на камень. Осталось ударов: %d\n", 3 - hits + 1);
+            return 0; // Не пускаем
+        } else {
+            printf("Камень сломан! Появился обломок (S).\n");
+            t->map[ny][nx] = TOWER_STONE_BROKEN;
+            return 0; // Не пускаем на этот ход
+        }
+    }
+
     if (!t->mirror_broken) {
         if (t->split_vertical && nx > t->split_pos) {
             printf("Зеркальная стена не пускает на чужую половину.\n");
@@ -697,11 +769,9 @@ int towerTryMove(TowerState *t, char dir) {
         }
     }
 
-    // Двигаем
     t->hero_x = nx;
     t->hero_y = ny;
 
-    // Обработка клетки, на которую встали
     if (cell == TOWER_SWITCH) {
         printf("Щёлк! Переключатель нажат — зеркальная стена исчезла!\n");
         t->mirror_broken = 1;
@@ -720,11 +790,13 @@ int towerTryMove(TowerState *t, char dir) {
     return 1;
 }
 
-// Главный цикл приключения в башне
 void towerAdventure(void) {
     TowerState t;
     memset(&t, 0, sizeof(t));
     t.floor = 1;
+
+    printf("\nВы входите в башню...\n");
+    add_one_hour(); // +1 час при входе
 
     if (!towerGenerate(&t)) {
         printf("Не удалось сгенерировать этаж.\n");
@@ -751,6 +823,33 @@ void towerAdventure(void) {
             continue;
         }
 
+        if (dir == 'I') {
+            showInventory();
+            towerPrint(&t);
+            continue;
+        }
+        
+        if (dir == 'E') {
+            char under = t.map[t.hero_y][t.hero_x];
+            if (under == TOWER_STONE_BROKEN) {
+                int slot = -1;
+                for (int i = 0; i < INVENTORY_SIZE; i++) {
+                    if (inventory[i] == ITEM_EMPTY) { slot = i; break; }
+                }
+                if (slot != -1) {
+                    inventory[slot] = ITEM_STONE;
+                    t.map[t.hero_y][t.hero_x] = TOWER_FLOOR;
+                    printf("Подобрали камень в слот %d!\n", slot);
+                } else {
+                    printf("Рюкзак полон! Некуда положить камень.\n");
+                }
+            } else {
+                printf("Здесь нечего подбирать.\n");
+            }
+            towerPrint(&t);
+            continue;
+        }
+
         if (dir != 'W' && dir != 'A' && dir != 'S' && dir != 'D') {
             printf("Неизвестная команда.\n");
             continue;
@@ -758,13 +857,13 @@ void towerAdventure(void) {
 
         towerTryMove(&t, dir);
 
-        // Переход на этаж выше?
+        // Переход на этаж выше
         if (towerCheckOnStairUp(&t)) {
             printf("\nВы поднимаетесь по лестнице на следующий этаж!\n");
-            // Освобождаем старую карту ПЕРЕД генерацией новой
             towerFree(&t);
             t.floor++;
             t.mirror_broken = 0;
+            add_one_hour(); // +1 час за этаж
             if (!towerGenerate(&t)) {
                 printf("Не удалось сгенерировать новый этаж. Возврат домой.\n");
                 running = 0;
