@@ -29,9 +29,9 @@
 #define ITEM_GOLD   9
 #define ITEM_PICKAXE 10 // Новая кирка
 
-// ===== ЛР4: Константы карты =====
-#define MAP_MIN_SIZE      5
-#define MAP_MAX_SIZE      30
+// ===== ЛР4:Параметры карты =====
+#define MAP_MIN_SIZE      20    //размеры карты менять тут
+#define MAP_MAX_SIZE      40	 
 
 #define TOWER_WALL       '*'   // Изменено на *
 #define TOWER_FLOOR      '.'
@@ -44,7 +44,7 @@
 #define TOWER_ROCK       '#'   // Новый камень
 #define TOWER_STONE_BROKEN 'S' // Сломанный камень
 
-#define TOWER_OBSTACLE_MIN 10
+#define TOWER_OBSTACLE_MIN 10    
 #define TOWER_OBSTACLE_MAX 25
 
 // ===== Выбор персонажа =====
