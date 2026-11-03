@@ -765,6 +765,25 @@ int towerTryMove(TowerState *t, char dir) {
         } else {
             printf("Камень сломан! Появился обломок (S).\n");
             t->map[ny][nx] = TOWER_STONE_BROKEN;
+            
+            // Ломаем отражение камня в зеркале
+            int mirror_rock_x, mirror_rock_y;
+            if (t->split_vertical) {
+                mirror_rock_x = t->width - 1 - nx;
+                mirror_rock_y = ny;
+            } else {
+                mirror_rock_x = nx;
+                mirror_rock_y = t->height - 1 - ny;
+            }
+            
+            if (!t->mirror_broken && mirror_rock_x >= 0 && mirror_rock_x < t->width &&
+                mirror_rock_y >= 0 && mirror_rock_y < t->height) {
+                if (t->map[mirror_rock_y][mirror_rock_x] == TOWER_ROCK) {
+                    t->map[mirror_rock_y][mirror_rock_x] = TOWER_STONE_BROKEN;
+                    printf("И его отражение в зеркале тоже треснуло!\n");
+                }
+            }
+            
             return 0; 
         }
     }
