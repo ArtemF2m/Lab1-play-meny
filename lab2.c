@@ -11,7 +11,7 @@
 #define HOURS_IN_DAY     24
 #define START_DAY        1
 #define START_HOUR       8
-#define MAX_ITEMS        11 // 11 предметов, включая Кирку
+#define MAX_ITEMS        11
 #define MAX_NAME_LEN     32
 #define MAX_PRICE_ITEMS  50
 #define MAX_PRICE_LEN    32
@@ -199,7 +199,7 @@ void askCharacter(void) {
                 break;
             }
         }
-        printf("Ошибка: нужно ввести число от 1 до 4.\n");
+        printf("Ошибка: нужно ввести число ОТ 1 ДО 4 ТОЛЬКО ЧИСЛО 1 2 3 4.\n");
     }
 
     switch (player_choice) {
@@ -491,7 +491,7 @@ void variantTask(void) {
 }
 
 // ============================================================
-// =================== ЛР4: ЗЕРКАЛЬНАЯ КОМНАТА =================
+// =================== ЛР4: ЗЕРКАЛЬНАЯ КОМНАТА ================
 // ============================================================
 
 char **allocateMap(int height, int width) {
@@ -799,7 +799,7 @@ void towerAdventure(void) {
     add_one_hour(); // +1 час при входе
 
     if (!towerGenerate(&t)) {
-        printf("Не удалось сгенерировать этаж.\n");
+        printf("Не удалось сгенерировать этаж КАК?.\n");
         towerFree(&t);
         return;
     }
@@ -865,7 +865,7 @@ void towerAdventure(void) {
             t.mirror_broken = 0;
             add_one_hour(); // +1 час за этаж
             if (!towerGenerate(&t)) {
-                printf("Не удалось сгенерировать новый этаж. Возврат домой.\n");
+                printf("Не удалось сгенерировать новый этаж.КАК????? Возврат домой.\n");
                 running = 0;
                 break;
             }
