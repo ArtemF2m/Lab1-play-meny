@@ -44,7 +44,6 @@
 #define TOWER_MIRROR_H   '-'
 #define TOWER_ROCK       '#'   // Новый камень
 #define TOWER_STONE_BROKEN 'S' // Сломанный камень
-#define TOWER_VOID       ' '   // Бездна (пустота после исчезновения зеркала)
 
 #define TOWER_OBSTACLE_MIN 10    
 #define TOWER_OBSTACLE_MAX 25
@@ -553,10 +552,9 @@ int towerGenerate(TowerState *t) {
     int obstacle_chance = TOWER_OBSTACLE_MIN +
         rand() % (TOWER_OBSTACLE_MAX - TOWER_OBSTACLE_MIN + 1);
 
+    // 1. Генерируем ПЕРВУЮ половину (стены и камни)
     if (t->split_vertical) {
         t->split_pos = t->width / 2;
-
-        // 1. Генерируем ПЕРВУЮ половину
         for (int y = 1; y < t->height - 1; y++) {
             for (int x = 1; x < t->split_pos; x++) {
                 int r = rand() % 100;
@@ -567,26 +565,8 @@ int towerGenerate(TowerState *t) {
                 }
             }
         }
-
-        // 2. ИДЕАЛЬНО ЗЕРКАЛИМ её во вторую половину
-        int span = t->split_pos - 1;
-        for (int y = 1; y < t->height - 1; y++) {
-            for (int i = 0; i < span; i++) {
-                int x_left  = t->split_pos - 1 - i;
-                int x_right = t->split_pos + 1 + i;
-                if (x_right >= t->width - 1) break;
-                t->map[y][x_right] = t->map[y][x_left];
-            }
-        }
-
-        // 3. Стена посередине
-        for (int y = 0; y < t->height; y++)
-            t->map[y][t->split_pos] = TOWER_MIRROR;
-
     } else {
         t->split_pos = t->height / 2;
-
-        // 1. Генерируем ПЕРВУЮ половину
         for (int y = 1; y < t->split_pos; y++) {
             for (int x = 1; x < t->width - 1; x++) {
                 int r = rand() % 100;
@@ -597,24 +577,9 @@ int towerGenerate(TowerState *t) {
                 }
             }
         }
-
-        // 2. ИДЕАЛЬНО ЗЕРКАЛИМ её во вторую половину
-        int span = t->split_pos - 1;
-        for (int x = 1; x < t->width - 1; x++) {
-            for (int i = 0; i < span; i++) {
-                int y_top    = t->split_pos - 1 - i;
-                int y_bottom = t->split_pos + 1 + i;
-                if (y_bottom >= t->height - 1) break;
-                t->map[y_bottom][x] = t->map[y_top][x];
-            }
-        }
-
-        // 3. Стена посередине
-        for (int x = 0; x < t->width; x++)
-            t->map[t->split_pos][x] = TOWER_MIRROR_H;
     }
 
-    // --- Герой на "своей" половине + лестница вниз под ним ---
+    // 2. Ставим объекты в ПЕРВОЙ половине (D и X)
     int placed = 0;
     for (int attempts = 0; attempts < 2000 && !placed; attempts++) {
         int x, y;
@@ -630,38 +595,10 @@ int towerGenerate(TowerState *t) {
             t->hero_x = x;
             t->hero_y = y;
             placed = 1;
-            
-            // Считаем начальные координаты двойника
-            if (t->split_vertical) {
-                t->mirror_hero_x = t->width - 1 - t->hero_x;
-                t->mirror_hero_y = t->hero_y;
-            } else {
-                t->mirror_hero_x = t->hero_x;
-                t->mirror_hero_y = t->height - 1 - t->hero_y;
-            }
         }
     }
     if (!placed) return 0;
 
-    // --- Лестница вверх (H) ---
-    placed = 0;
-    for (int attempts = 0; attempts < 2000 && !placed; attempts++) {
-        int x, y;
-        if (t->split_vertical) {
-            x = 1 + rand() % (t->split_pos - 1);
-            y = 1 + rand() % (t->height - 2);
-        } else {
-            x = 1 + rand() % (t->width - 2);
-            y = 1 + rand() % (t->split_pos - 1);
-        }
-        if (t->map[y][x] == TOWER_FLOOR &&
-            !(x == t->hero_x && y == t->hero_y)) {
-            t->map[y][x] = TOWER_STAIR_UP;
-            placed = 1;
-        }
-    }
-
-    // --- Переключатель (X) ---
     placed = 0;
     for (int attempts = 0; attempts < 2000 && !placed; attempts++) {
         int x, y;
@@ -676,6 +613,59 @@ int towerGenerate(TowerState *t) {
             t->map[y][x] = TOWER_SWITCH;
             placed = 1;
         }
+    }
+
+    // 3. Зеркалим всё во вторую половину
+    if (t->split_vertical) {
+        int span = t->split_pos - 1;
+        for (int y = 1; y < t->height - 1; y++) {
+            for (int i = 0; i < span; i++) {
+                int x_left  = t->split_pos - 1 - i;
+                int x_right = t->split_pos + 1 + i;
+                if (x_right >= t->width - 1) break;
+                t->map[y][x_right] = t->map[y][x_left];
+            }
+        }
+        for (int y = 0; y < t->height; y++)
+            t->map[y][t->split_pos] = TOWER_MIRROR;
+    } else {
+        int span = t->split_pos - 1;
+        for (int x = 1; x < t->width - 1; x++) {
+            for (int i = 0; i < span; i++) {
+                int y_top    = t->split_pos - 1 - i;
+                int y_bottom = t->split_pos + 1 + i;
+                if (y_bottom >= t->height - 1) break;
+                t->map[y_bottom][x] = t->map[y_top][x];
+            }
+        }
+        for (int x = 0; x < t->width; x++)
+            t->map[t->split_pos][x] = TOWER_MIRROR_H;
+    }
+
+    // 4. Ставим Лестницу Вверх (H) ТОЛЬКО во второй половине
+    placed = 0;
+    for (int attempts = 0; attempts < 2000 && !placed; attempts++) {
+        int x, y;
+        if (t->split_vertical) {
+            x = t->split_pos + 1 + rand() % (t->width - t->split_pos - 2);
+            y = 1 + rand() % (t->height - 2);
+        } else {
+            x = 1 + rand() % (t->width - 2);
+            y = t->split_pos + 1 + rand() % (t->height - t->split_pos - 2);
+        }
+        if (t->map[y][x] == TOWER_FLOOR) {
+            t->map[y][x] = TOWER_STAIR_UP;
+            placed = 1;
+        }
+    }
+
+    // Координаты двойника
+    if (t->split_vertical) {
+        t->mirror_hero_x = t->width - 1 - t->hero_x;
+        t->mirror_hero_y = t->hero_y;
+    } else {
+        t->mirror_hero_x = t->hero_x;
+        t->mirror_hero_y = t->height - 1 - t->hero_y;
     }
 
     return 1;
@@ -738,11 +728,6 @@ int towerTryMove(TowerState *t, char dir) {
     }
 
     char cell = t->map[ny][nx];
-
-    if (cell == TOWER_VOID) {
-        printf("Там бездна! Туда нельзя.\n");
-        return 0;
-    }
 
     if (cell == TOWER_WALL || cell == TOWER_MIRROR || cell == TOWER_MIRROR_H) {
         printf("Стена — туда нельзя.\n");
@@ -813,23 +798,18 @@ int towerTryMove(TowerState *t, char dir) {
 
     if (cell == TOWER_SWITCH) {
         printf("Щёлк! Переключатель нажат — зеркальная стена исчезла!\n");
-        printf("Вторая половина комнаты, как и само зеркало, растворилась в пустоте...\n");
         t->mirror_broken = 1;
-        t->mirror_hero_x = -1;
-        t->mirror_hero_y = -1;
         
-        // Стираем зеркало и ВСЮ вторую половину
+        // Просто убираем стену, вторая половина остается!
         if (t->split_vertical) {
             for (int y = 0; y < t->height; y++) {
-                for (int x = t->split_pos; x < t->width; x++) {
-                    t->map[y][x] = TOWER_VOID;
-                }
+                if (t->map[y][t->split_pos] == TOWER_MIRROR)
+                    t->map[y][t->split_pos] = TOWER_FLOOR;
             }
         } else {
-            for (int y = t->split_pos; y < t->height; y++) {
-                for (int x = 0; x < t->width; x++) {
-                    t->map[y][x] = TOWER_VOID;
-                }
+            for (int x = 0; x < t->width; x++) {
+                if (t->map[t->split_pos][x] == TOWER_MIRROR_H)
+                    t->map[t->split_pos][x] = TOWER_FLOOR;
             }
         }
         t->map[ny][nx] = TOWER_FLOOR;
