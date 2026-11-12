@@ -666,7 +666,9 @@ int towerGenerate(TowerState *t) {
     }
 
     return 1;
-}void towerFree(TowerState *t) {
+}
+
+void towerFree(TowerState *t) {
     if (t->map) {
         freeMap(t->map, t->height);
         t->map = NULL;
@@ -687,7 +689,6 @@ void towerPrint(const TowerState *t) {
             if (!t->mirror_broken) {
                 if (t->split_vertical && x > t->split_pos) {
                     int mirror_x = t->width - 1 - x; // Зеркальная координата
-                    // Если в отражении стоит герой, рисуем двойника
                     if (mirror_x == t->hero_x && y == t->hero_y) {
                         putchar(TOWER_MIRROR_HERO);
                     } else {
@@ -697,7 +698,6 @@ void towerPrint(const TowerState *t) {
                 }
                 if (!t->split_vertical && y > t->split_pos) {
                     int mirror_y = t->height - 1 - y; // Зеркальная координата
-                    // Если в отражении стоит герой, рисуем двойника
                     if (x == t->hero_x && mirror_y == t->hero_y) {
                         putchar(TOWER_MIRROR_HERO);
                     } else {
@@ -707,11 +707,9 @@ void towerPrint(const TowerState *t) {
                 }
             }
 
-            // Рисуем героя
             if (x == t->hero_x && y == t->hero_y) {
                 putchar(TOWER_HERO);
             }
-            // Всё остальное
             else {
                 putchar(t->map[y][x]);
             }
@@ -720,6 +718,7 @@ void towerPrint(const TowerState *t) {
     }
     printf("W/A/S/D — движение, I — инвентарь, E — подобрать, Q — домой (на 'D')\n");
 }
+
 static char towerCellUnderHero(const TowerState *t) {
     return t->map[t->hero_y][t->hero_x];
 }
@@ -821,14 +820,14 @@ int towerTryMove(TowerState *t, char dir) {
         printf("Щёлк! Переключатель нажат — зеркальная стена исчезла!\n");
         t->mirror_broken = 1;
         
-        // Просто убираем стену, вторая половина остается!
+        // Убираем стену, но НЕ трогаем внешнюю рамку (от 1 до size-1)
         if (t->split_vertical) {
-            for (int y = 0; y < t->height; y++) {
+            for (int y = 1; y < t->height - 1; y++) {
                 if (t->map[y][t->split_pos] == TOWER_MIRROR)
                     t->map[y][t->split_pos] = TOWER_FLOOR;
             }
         } else {
-            for (int x = 0; x < t->width; x++) {
+            for (int x = 1; x < t->width - 1; x++) {
                 if (t->map[t->split_pos][x] == TOWER_MIRROR_H)
                     t->map[t->split_pos][x] = TOWER_FLOOR;
             }
