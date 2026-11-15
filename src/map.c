@@ -57,33 +57,37 @@ Map* map_create(int floor) {
 
     if (m->split_vertical) {
         m->split_pos = m->width / 2;
-        for (int y = 1; y < m->height - 1; y++)
+        for (int y = 1; y < m->height - 1; y++) {
             for (int x = 1; x < m->split_pos; x++) {
                 int r = rand() % 100;
                 if (r < obstacle_chance) m->map[y][x] = TOWER_WALL;
                 else if (r < obstacle_chance + 5) m->map[y][x] = TOWER_ROCK;
             }
-        for (int y = 1; y < m->height - 1; y++)
+        }
+        for (int y = 1; y < m->height - 1; y++) {
             for (int x = m->split_pos + 1; x < m->width - 1; x++) {
                 int r = rand() % 100;
                 if (r < obstacle_chance) m->map[y][x] = TOWER_WALL;
                 else if (r < obstacle_chance + 5) m->map[y][x] = TOWER_ROCK;
             }
+        }
         for (int y = 0; y < m->height; y++) m->map[y][m->split_pos] = TOWER_MIRROR;
     } else {
         m->split_pos = m->height / 2;
-        for (int y = 1; y < m->split_pos; y++)
+        for (int y = 1; y < m->split_pos; y++) {
             for (int x = 1; x < m->width - 1; x++) {
                 int r = rand() % 100;
                 if (r < obstacle_chance) m->map[y][x] = TOWER_WALL;
                 else if (r < obstacle_chance + 5) m->map[y][x] = TOWER_ROCK;
             }
-        for (int y = m->split_pos + 1; y < m->height - 1; y++)
+        }
+        for (int y = m->split_pos + 1; y < m->height - 1; y++) {
             for (int x = 1; x < m->width - 1; x++) {
                 int r = rand() % 100;
                 if (r < obstacle_chance) m->map[y][x] = TOWER_WALL;
                 else if (r < obstacle_chance + 5) m->map[y][x] = TOWER_ROCK;
             }
+        }
         for (int x = 0; x < m->width; x++) m->map[m->split_pos][x] = TOWER_MIRROR_H;
     }
 
@@ -132,8 +136,9 @@ void map_free(Map **m) {
 
 void map_print(const Map *m, const Player *p) {
     printf("\n===== Башня, этаж %d =====\n", m->floor);
-    printf("HP: %d/%d | Стамина: %d/%d | Золото: %d | Время: %02d:00\n",
-           p->hp, p->max_hp, p->stamina, p->max_stamina, p->gold, 12); // Время тут упрощено
+    // HUD (Время выводится снаружи, тут только статы)
+    printf("HP: %d/%d | Стамина: %d/%d | Золото: %d\n",
+           p->hp, p->max_hp, p->stamina, p->max_stamina, p->gold);
     
     for (int y = 0; y < m->height; y++) {
         for (int x = 0; x < m->width; x++) {
@@ -175,8 +180,15 @@ int map_move(Map *m, char dir) {
         static int lx = -1, ly = -1;
         if (nx != lx || ny != ly) { hits = 0; lx = nx; ly = ny; }
         hits++;
-        if (hits < 4) { return 0; }
-        else { m->map[ny][nx] = TOWER_STONE_BROKEN; return 0; }
+        if (hits < 4) { 
+            printf("Наткнулись на камень. Осталось ударов: %d\n", 3 - hits + 1);
+            return 0; 
+        }
+        else { 
+            m->map[ny][nx] = TOWER_STONE_BROKEN; 
+            printf("Камень сломан! Подберите обломки (E).\n");
+            return 0; 
+        }
     }
 
     if (!m->mirror_broken) {
@@ -190,6 +202,7 @@ int map_move(Map *m, char dir) {
     else { m->mirror_hero_x = m->hero_x; m->mirror_hero_y = m->height - 1 - m->hero_y; }
 
     if (cell == TOWER_SWITCH) {
+        printf("Зеркало разбито!\n");
         m->mirror_broken = 1;
         if (m->split_vertical) {
             for (int y = 1; y < m->height - 1; y++)
@@ -201,4 +214,13 @@ int map_move(Map *m, char dir) {
         m->map[ny][nx] = TOWER_FLOOR;
     }
     return 1;
+}
+
+int map_pickup(Map *m) {
+    char cell = m->map[m->hero_y][m->hero_x];
+    if (cell == TOWER_STONE_BROKEN) {
+        m->map[m->hero_y][m->hero_x] = TOWER_FLOOR;
+        return 1;
+    }
+    return 0;
 }

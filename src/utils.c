@@ -7,6 +7,7 @@ int read_int(int *value) {
         while (getchar() != '\n');
         return 0;
     }
+    while (getchar() != '\n'); 
     return 1;
 }
 
@@ -41,10 +42,4 @@ void load_item_names(void) {
         }
     }
     fclose(f);
-}
-
-void clear_screen(void) {
-    // В Linux: system("clear"); В Windows: system("cls");
-    // Оставим просто отступ для совместимости
-    printf("\n\n");
 }

@@ -9,7 +9,6 @@ Player* player_create(void) {
     read_line(p->name, MAX_NAME_LEN);
     if (strlen(p->name) == 0) strcpy(p->name, "Безымянный");
 
-    // Базовые статы
     p->max_hp = 100;
     p->hp = 100;
     p->max_stamina = 50;
@@ -18,9 +17,8 @@ Player* player_create(void) {
     p->x = 0; p->y = 0;
 
     for (int i = 0; i < INV_SIZE; i++) p->inventory[i] = ITEM_EMPTY;
-    p->inventory[0] = ITEM_PICKAXE; // Кирка в первом слоте
+    p->inventory[0] = ITEM_PICKAXE; 
 
-    // Сброс экипировки
     for (int i = 0; i < SLOT_COUNT; i++) {
         p->equip.is_equipped[i] = 0;
         p->equip.items[i].hp_bonus = 0;
@@ -28,7 +26,7 @@ Player* player_create(void) {
         strcpy(p->equip.items[i].name, "Нет");
     }
 
-    printf("Память структуры по адресу %p освобождена.\n", (void*)p); // Парадокс: выводим как в задании
+    printf("Создан персонаж: %s (Адрес: %p)\n", p->name, (void*)p);
     return p;
 }
 
@@ -41,9 +39,6 @@ void player_free(Player **p) {
 }
 
 void player_update_stats(Player *p) {
-    int old_max_hp = p->max_hp;
-    int old_max_stamina = p->max_stamina;
-
     p->max_hp = 100;
     p->max_stamina = 50;
 
@@ -54,7 +49,6 @@ void player_update_stats(Player *p) {
         }
     }
 
-    // Корректировка текущих статов
     if (p->hp > p->max_hp) p->hp = p->max_hp;
     if (p->stamina > p->max_stamina) p->stamina = p->max_stamina;
 

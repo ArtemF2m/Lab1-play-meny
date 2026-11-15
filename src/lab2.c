@@ -28,7 +28,7 @@ void time_menu(Player **p) {
             int hours;
             printf("Сколько часов ждать? ");
             if (!read_int(&hours) || hours < 1) { printf("Ошибка.\n"); continue; }
-            if (g_hour + hours >= 26) { // Условно: 02:00 ночи это 26 часов от начала
+            if (g_hour + hours >= 26) { 
                 printf("Нельзя ждать до 02:00 ночи! Нужно спать.\n");
             } else {
                 g_hour += hours;
@@ -100,7 +100,10 @@ int main(void) {
                 int running = 1;
                 while (running) {
                     map_print(m, player);
+                    printf("Время: %02d:00\n", g_hour);
+                    printf("Управление: W/A/S/D — ходьба, I — инвентарь, E — подобрать, Q — выход (на D)\n");
                     printf("Ход: ");
+                    
                     char buf[16];
                     if (!fgets(buf, sizeof(buf), stdin)) break;
                     char dir = buf[0];
@@ -116,6 +119,35 @@ int main(void) {
                         continue;
                     }
 
+                    if (dir == 'I') {
+                        player_print_card(player);
+                        continue;
+                    }
+
+                    if (dir == 'E') {
+                        if (map_pickup(m)) {
+                            int slot = -1;
+                            for (int i = 0; i < INV_SIZE; i++) {
+                                if (player->inventory[i] == ITEM_EMPTY) { slot = i; break; }
+                            }
+                            if (slot != -1) {
+                                player->inventory[slot] = ITEM_STONE;
+                                printf("Подобрали камень в слот %d!\n", slot);
+                            } else {
+                                printf("Рюкзак полон!\n");
+                                m->map[m->hero_y][m->hero_x] = TOWER_STONE_BROKEN;
+                            }
+                        } else {
+                            printf("Здесь нечего подбирать.\n");
+                        }
+                        continue;
+                    }
+
+                    if (dir != 'W' && dir != 'A' && dir != 'S' && dir != 'D') {
+                        printf("Неизвестная команда.\n");
+                        continue;
+                    }
+
                     int moved = map_move(m, dir);
                     if (moved) {
                         player->stamina--;
@@ -125,6 +157,8 @@ int main(void) {
                             printf("Переход на новый этаж!\n");
                             int reward = 10 * m->floor;
                             player->gold += reward;
+                            printf("Награда за этаж: +%d золота.\n", reward);
+                            
                             player->stamina -= 5;
                             if (player->stamina < 0) player->stamina = 0;
                             g_hour++; if (g_hour >= 24) { g_hour -= 24; g_day++; }
@@ -132,6 +166,7 @@ int main(void) {
                             int next_floor = m->floor + 1;
                             map_free(&m);
                             m = map_create(next_floor);
+                            printf("Память старой карты очищена, создан этаж %d.\n", next_floor);
                         }
 
                         if (player->stamina <= 0) {
@@ -140,6 +175,18 @@ int main(void) {
                             player->gold -= loss;
                             printf("Потеряно золота: %d\n", loss);
                             running = 0;
+                        }
+                    } else {
+                        int nx = m->hero_x, ny = m->hero_y;
+                        if (dir == 'W') ny--;
+                        if (dir == 'S') ny++;
+                        if (dir == 'A') nx--;
+                        if (dir == 'D') nx++;
+                        if (nx >= 0 && nx < m->width && ny >= 0 && ny < m->height) {
+                            char next_cell = m->map[ny][nx];
+                            if (next_cell == TOWER_WALL) printf("Там стена.\n");
+                            else if (next_cell == TOWER_ROCK) printf("Там камень.\n");
+                            else if (next_cell == TOWER_MIRROR || next_cell == TOWER_MIRROR_H) printf("Зеркало не пускает.\n");
                         }
                     }
                 }

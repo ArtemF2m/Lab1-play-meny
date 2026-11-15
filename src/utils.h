@@ -19,15 +19,11 @@
 
 #define MAX_ITEMS    11
 #define MAX_NAME_LEN 32
-#define MAX_PRICE_ITEMS 50
-#define MAX_PRICE_LEN   32
 
-// Глобальные массивы (только для чтения, инициализируются один раз)
 extern char g_item_names[MAX_ITEMS][MAX_NAME_LEN];
 
 int  read_int(int *value);
 void read_line(char *buf, int size);
 void load_item_names(void);
-void clear_screen(void);
 
 #endif

@@ -37,5 +37,6 @@ Map* map_create(int floor);
 void map_free(Map **m);
 void map_print(const Map *m, const Player *p);
 int  map_move(Map *m, char dir);
+int  map_pickup(Map *m);
 
 #endif
