@@ -98,12 +98,16 @@ int main(void) {
                 if (!m) break;
                 
                 int running = 1;
+                int start_gold = player->gold;
+                
                 while (running) {
+                    // RENDER
                     map_print(m, player);
-                    printf("Время: %02d:00\n", g_hour);
-                    printf("Управление: W/A/S/D — ходьба, I — инвентарь, E — подобрать, Q — выход (на D)\n");
+                    printf("Время: %02d:00 | Последнее событие: %s\n", g_hour, g_last_event);
+                    printf("Управление: W/A/S/D — ходьба/атака, I — инвентарь, Q — выход\n");
                     printf("Ход: ");
                     
+                    // INPUT
                     char buf[16];
                     if (!fgets(buf, sizeof(buf), stdin)) break;
                     char dir = buf[0];
@@ -124,72 +128,83 @@ int main(void) {
                         continue;
                     }
 
-                    if (dir == 'E') {
-                        if (map_pickup(m)) {
-                            int slot = -1;
-                            for (int i = 0; i < INV_SIZE; i++) {
-                                if (player->inventory[i] == ITEM_EMPTY) { slot = i; break; }
-                            }
-                            if (slot != -1) {
-                                player->inventory[slot] = ITEM_STONE;
-                                printf("Подобрали камень в слот %d!\n", slot);
+                    if (dir != 'W' && dir != 'A' && dir != 'S' && dir != 'D') {
+                        sprintf(g_last_event, "Неизвестная команда.");
+                        continue;
+                    }
+
+                    // UPDATE
+                    int nx = m->hero_x, ny = m->hero_y;
+                    if (dir == 'W') ny--;
+                    if (dir == 'S') ny++;
+                    if (dir == 'A') nx--;
+                    if (dir == 'D') nx++;
+
+                    if (nx < 0 || nx >= m->width || ny < 0 || ny >= m->height) {
+                        sprintf(g_last_event, "Там край карты.");
+                        continue;
+                    }
+
+                    // Взаимодействие с сущностями
+                    int interacted = entity_interact(m->entities, m->entity_count, player, nx, ny);
+
+                    if (!interacted) {
+                        int moved = map_move(m, dir);
+                        if (moved) {
+                            player->stamina--;
+                            if (player->stamina < 0) player->stamina = 0;
+                            
+                            if (m->map[m->hero_y][m->hero_x] == TOWER_STAIR_UP) {
+                                sprintf(g_last_event, "Вы поднялись на этаж %d!", m->floor + 1);
+                                int reward = 10 * m->floor;
+                                player->gold += reward;
+                                player->stamina -= 5;
+                                if (player->stamina < 0) player->stamina = 0;
+                                g_hour++; if (g_hour >= 24) { g_hour -= 24; g_day++; }
+                                
+                                int next_floor = m->floor + 1;
+                                map_free(&m);
+                                m = map_create(next_floor);
                             } else {
-                                printf("Рюкзак полон!\n");
-                                m->map[m->hero_y][m->hero_x] = TOWER_STONE_BROKEN;
+                                sprintf(g_last_event, "Вы сделали шаг.");
                             }
                         } else {
-                            printf("Здесь нечего подбирать.\n");
+                            if (m->map[ny][nx] == TOWER_WALL) sprintf(g_last_event, "Там стена.");
+                            else if (m->map[ny][nx] == TOWER_MIRROR || m->map[ny][nx] == TOWER_MIRROR_H) 
+                                sprintf(g_last_event, "Зеркало не пускает.");
                         }
-                        continue;
                     }
 
-                    if (dir != 'W' && dir != 'A' && dir != 'S' && dir != 'D') {
-                        printf("Неизвестная команда.\n");
-                        continue;
-                    }
-
-                    int moved = map_move(m, dir);
-                    if (moved) {
-                        player->stamina--;
-                        if (player->stamina < 0) player->stamina = 0;
+                    if (player->hp <= 0 || player->stamina <= 0) {
+                        printf("Вы упали без сил! Эвакуация...\n");
+                        int loss = player->gold / 2;
+                        player->gold -= loss;
                         
-                        if (m->map[m->hero_y][m->hero_x] == TOWER_STAIR_UP) {
-                            printf("Переход на новый этаж!\n");
-                            int reward = 10 * m->floor;
-                            player->gold += reward;
-                            printf("Награда за этаж: +%d золота.\n", reward);
-                            
-                            player->stamina -= 5;
-                            if (player->stamina < 0) player->stamina = 0;
-                            g_hour++; if (g_hour >= 24) { g_hour -= 24; g_day++; }
-                            
-                            int next_floor = m->floor + 1;
-                            map_free(&m);
-                            m = map_create(next_floor);
-                            printf("Память старой карты очищена, создан этаж %d.\n", next_floor);
+                        FILE *f = fopen("diary.txt", "a");
+                        if (f) {
+                            fprintf(f, "--- Отчет о походе (Обморок) ---\n");
+                            fprintf(f, "День %d, этаж %d\n", g_day, m->floor);
+                            fprintf(f, "Потеряно золота: %d\n\n", loss);
+                            fclose(f);
                         }
-
-                        if (player->stamina <= 0) {
-                            printf("Вы упали без сил! Эвакуация...\n");
-                            int loss = player->gold / 2;
-                            player->gold -= loss;
-                            printf("Потеряно золота: %d\n", loss);
-                            running = 0;
-                        }
-                    } else {
-                        int nx = m->hero_x, ny = m->hero_y;
-                        if (dir == 'W') ny--;
-                        if (dir == 'S') ny++;
-                        if (dir == 'A') nx--;
-                        if (dir == 'D') nx++;
-                        if (nx >= 0 && nx < m->width && ny >= 0 && ny < m->height) {
-                            char next_cell = m->map[ny][nx];
-                            if (next_cell == TOWER_WALL) printf("Там стена.\n");
-                            else if (next_cell == TOWER_ROCK) printf("Там камень.\n");
-                            else if (next_cell == TOWER_MIRROR || next_cell == TOWER_MIRROR_H) printf("Зеркало не пускает.\n");
-                        }
+                        
+                        g_day++; g_hour = 8;
+                        player->hp = player->max_hp;
+                        player->stamina = player->max_stamina;
+                        running = 0;
                     }
                 }
+                
+                if (player->hp > 0 && player->stamina > 0) {
+                    FILE *f = fopen("diary.txt", "a");
+                    if (f) {
+                        fprintf(f, "--- Отчет о походе ---\n");
+                        fprintf(f, "День %d, этаж %d\n", g_day, m->floor);
+                        fprintf(f, "Заработано золота: %d\n\n", player->gold - start_gold);
+                        fclose(f);
+                    }
+                }
+                
                 if (m) map_free(&m);
                 break;
             }

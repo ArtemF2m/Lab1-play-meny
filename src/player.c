@@ -15,6 +15,8 @@ Player* player_create(void) {
     p->stamina = 50;
     p->gold = 50;
     p->x = 0; p->y = 0;
+    p->attack = 5;  // НОВОЕ
+    p->defense = 2; // НОВОЕ
 
     for (int i = 0; i < INV_SIZE; i++) p->inventory[i] = ITEM_EMPTY;
     p->inventory[0] = ITEM_PICKAXE; 
@@ -112,8 +114,8 @@ void player_equip_menu(Player *p) {
 void player_print_card(const Player *p) {
     printf("\n===== Карточка персонажа =====\n");
     printf("Имя: %s\n", p->name);
-    printf("HP: %d/%d\n", p->hp, p->max_hp);
-    printf("Выносливость: %d/%d\n", p->stamina, p->max_stamina);
+    printf("HP: %d/%d | Стамина: %d/%d\n", p->hp, p->max_hp, p->stamina, p->max_stamina);
+    printf("Атака: %d | Защита: %d\n", p->attack, p->defense);
     printf("Золото: %d\n", p->gold);
     printf("Инвентарь:\n");
     for (int i = 0; i < INV_SIZE; i++) {

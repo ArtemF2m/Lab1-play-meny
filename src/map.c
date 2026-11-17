@@ -122,13 +122,17 @@ Map* map_create(int floor) {
     if (m->split_vertical) { m->mirror_hero_x = m->width - 1 - m->hero_x; m->mirror_hero_y = m->hero_y; }
     else { m->mirror_hero_x = m->hero_x; m->mirror_hero_y = m->height - 1 - m->hero_y; }
 
+    // Генерация сущностей
+    m->entity_count = entity_generate(&m->entities, m->map, m->width, m->height, floor);
+
     return m;
 }
 
 void map_free(Map **m) {
     if (m && *m) {
         free_map((*m)->map, (*m)->height);
-        printf("Память структуры по адресу %p освобождена.\n", (void*)*m);
+        entity_free(&(*m)->entities);
+        printf("Память структуры карты по адресу %p освобождена.\n", (void*)*m);
         free(*m);
         *m = NULL;
     }
@@ -136,25 +140,43 @@ void map_free(Map **m) {
 
 void map_print(const Map *m, const Player *p) {
     printf("\n===== Башня, этаж %d =====\n", m->floor);
-    // HUD (Время выводится снаружи, тут только статы)
     printf("HP: %d/%d | Стамина: %d/%d | Золото: %d\n",
            p->hp, p->max_hp, p->stamina, p->max_stamina, p->gold);
     
     for (int y = 0; y < m->height; y++) {
         for (int x = 0; x < m->width; x++) {
+            char to_print = m->map[y][x];
+
+            // Зеркало
             if (!m->mirror_broken) {
                 if (m->split_vertical && x > m->split_pos) {
                     int mx = m->width - 1 - x;
-                    putchar((mx == m->hero_x && y == m->hero_y) ? TOWER_MIRROR_HERO : m->map[y][mx]);
+                    if (mx == m->hero_x && y == m->hero_y) to_print = TOWER_MIRROR_HERO;
+                    else to_print = m->map[y][mx];
+                    putchar(to_print);
                     continue;
                 }
                 if (!m->split_vertical && y > m->split_pos) {
                     int my = m->height - 1 - y;
-                    putchar((x == m->hero_x && my == m->hero_y) ? TOWER_MIRROR_HERO : m->map[my][x]);
+                    if (x == m->hero_x && my == m->hero_y) to_print = TOWER_MIRROR_HERO;
+                    else to_print = m->map[my][x];
+                    putchar(to_print);
                     continue;
                 }
             }
-            putchar((x == m->hero_x && y == m->hero_y) ? TOWER_HERO : m->map[y][x]);
+
+            // Игрок или сущности
+            if (x == m->hero_x && y == m->hero_y) {
+                to_print = TOWER_HERO;
+            } else {
+                for (int i = 0; i < m->entity_count; i++) {
+                    if (m->entities[i].is_alive && m->entities[i].x == x && m->entities[i].y == y) {
+                        to_print = m->entities[i].symbol;
+                        break;
+                    }
+                }
+            }
+            putchar(to_print);
         }
         putchar('\n');
     }
@@ -175,22 +197,6 @@ int map_move(Map *m, char dir) {
     char cell = m->map[ny][nx];
     if (cell == TOWER_WALL || cell == TOWER_MIRROR || cell == TOWER_MIRROR_H) return 0;
 
-    if (cell == TOWER_ROCK) {
-        static int hits = 0;
-        static int lx = -1, ly = -1;
-        if (nx != lx || ny != ly) { hits = 0; lx = nx; ly = ny; }
-        hits++;
-        if (hits < 4) { 
-            printf("Наткнулись на камень. Осталось ударов: %d\n", 3 - hits + 1);
-            return 0; 
-        }
-        else { 
-            m->map[ny][nx] = TOWER_STONE_BROKEN; 
-            printf("Камень сломан! Подберите обломки (E).\n");
-            return 0; 
-        }
-    }
-
     if (!m->mirror_broken) {
         if (m->split_vertical && nx > m->split_pos) return 0;
         if (!m->split_vertical && ny > m->split_pos) return 0;
@@ -202,7 +208,6 @@ int map_move(Map *m, char dir) {
     else { m->mirror_hero_x = m->hero_x; m->mirror_hero_y = m->height - 1 - m->hero_y; }
 
     if (cell == TOWER_SWITCH) {
-        printf("Зеркало разбито!\n");
         m->mirror_broken = 1;
         if (m->split_vertical) {
             for (int y = 1; y < m->height - 1; y++)
@@ -214,13 +219,4 @@ int map_move(Map *m, char dir) {
         m->map[ny][nx] = TOWER_FLOOR;
     }
     return 1;
-}
-
-int map_pickup(Map *m) {
-    char cell = m->map[m->hero_y][m->hero_x];
-    if (cell == TOWER_STONE_BROKEN) {
-        m->map[m->hero_y][m->hero_x] = TOWER_FLOOR;
-        return 1;
-    }
-    return 0;
 }

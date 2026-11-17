@@ -40,6 +40,8 @@ typedef struct {
     int max_stamina;
     int gold;
     int x, y;
+    int attack;  // НОВОЕ
+    int defense; // НОВОЕ
     int inventory[INV_SIZE];
     Equipment equip;
 } Player;

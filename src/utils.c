@@ -1,6 +1,7 @@
 #include "utils.h"
 
 char g_item_names[MAX_ITEMS][MAX_NAME_LEN];
+char g_last_event[256] = "Вы вошли в башню...";
 
 int read_int(int *value) {
     if (scanf("%d", value) != 1) {
@@ -22,7 +23,7 @@ void read_line(char *buf, int size) {
 void load_item_names(void) {
     const char *defaults[MAX_ITEMS] = {
         "Пусто", "Дерево", "Камень", "Семена", "Железо",
-        "Вода", "Еда", "Веревка", "Факел", "Золото", "Кирка"
+        "Вода", "Еда", "Веревка", "Факел", "Золото", "Кирка", "Кожа"
     };
     for (int i = 0; i < MAX_ITEMS; i++) {
         strncpy(g_item_names[i], defaults[i], MAX_NAME_LEN - 1);
