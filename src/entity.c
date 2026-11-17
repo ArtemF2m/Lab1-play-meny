@@ -11,12 +11,23 @@ int entity_generate(Entity **entities, char **map, int width, int height, int fl
     for (int y = 1; y < height - 1; y++) {
         for (int x = 1; x < width - 1; x++) {
             if (count >= MAX_ENTITIES) break;
+            
+            // Защита от наложения сущностей
+            int already_has = 0;
+            for (int i = 0; i < count; i++) {
+                if ((*entities)[i].x == x && (*entities)[i].y == y) {
+                    already_has = 1;
+                    break;
+                }
+            }
+            if (already_has) continue;
+
             EntityType type = ENT_NONE;
             char sym = 0;
             
-            // T - дерево, R - валун, а старые '*' и '#' просто стены
             if (map[y][x] == TOWER_WALL) { type = ENT_TREE; sym = 'T'; }
             else if (map[y][x] == 'R') { type = ENT_ROCK; sym = 'R'; }
+            else if (map[y][x] == '#') { type = ENT_STONE; sym = '#'; }
             else if (rand() % 100 < 5) { type = ENT_HEAL; sym = '+'; }
             else if (rand() % 100 < 10) { type = ENT_MONSTER; sym = 'M'; }
 
@@ -34,7 +45,11 @@ int entity_generate(Entity **entities, char **map, int width, int height, int fl
                     e.drop_item_id = ITEM_WOOD;
                     e.attack = 0;
                 } else if (type == ENT_ROCK) {
-                    e.hp = e.max_hp = 8 * floor; // Твердый валун
+                    e.hp = e.max_hp = 9;
+                    e.drop_item_id = ITEM_STONE;
+                    e.attack = 0;
+                } else if (type == ENT_STONE) {
+                    e.hp = e.max_hp = 4;
                     e.drop_item_id = ITEM_STONE;
                     e.attack = 0;
                 } else if (type == ENT_MONSTER) {
@@ -50,7 +65,7 @@ int entity_generate(Entity **entities, char **map, int width, int height, int fl
                 (*entities)[count] = e;
                 count++;
                 
-                // Очищаем карту от старых символов
+                // Очищаем карту от старого символа
                 if (type != ENT_HEAL && type != ENT_MONSTER) map[y][x] = TOWER_FLOOR;
             }
         }
@@ -66,10 +81,9 @@ void entity_free(Entity **entities) {
     }
 }
 
-void spawn_drop(Drop *drops, int *drop_count, int x, int y, int item_id, int amount) {
+void spawn_drop(Drop *drops, int *drop_count, char **map, int width, int height, int x, int y, int item_id, int amount) {
     for (int a = 0; a < amount; a++) {
         if (*drop_count >= MAX_DROPS) return;
-        
         int dx[] = {0, 0, -1, 1, -1, 1, -1, 1};
         int dy[] = {-1, 1, 0, 0, -1, -1, 1, 1};
         int placed = 0;
@@ -77,6 +91,11 @@ void spawn_drop(Drop *drops, int *drop_count, int x, int y, int item_id, int amo
         for (int i = 0; i < 8 && !placed; i++) {
             int nx = x + dx[i];
             int ny = y + dy[i];
+            if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+            
+            char cell = map[ny][nx];
+            if (cell == TOWER_WALL || cell == TOWER_MIRROR || cell == TOWER_MIRROR_H) continue;
+
             int occupied = 0;
             for (int j = 0; j < *drop_count; j++) {
                 if (drops[j].x == nx && drops[j].y == ny) { occupied = 1; break; }
@@ -90,6 +109,19 @@ void spawn_drop(Drop *drops, int *drop_count, int x, int y, int item_id, int amo
                 placed = 1;
             }
         }
+        if (!placed) {
+            int occupied = 0;
+            for (int j = 0; j < *drop_count; j++) {
+                if (drops[j].x == x && drops[j].y == y) { occupied = 1; break; }
+            }
+            if (!occupied && *drop_count < MAX_DROPS) {
+                drops[*drop_count].x = x;
+                drops[*drop_count].y = y;
+                drops[*drop_count].item_id = item_id;
+                drops[*drop_count].is_alive = 1;
+                (*drop_count)++;
+            }
+        }
     }
 }
 
@@ -100,7 +132,7 @@ int find_entity(Entity *entities, int count, int x, int y) {
     return -1;
 }
 
-int entity_interact(Entity *entities, int count, Player *p, int target_x, int target_y, Drop *drops, int *drop_count) {
+int entity_interact(Entity *entities, int count, Player *p, int target_x, int target_y, Drop *drops, int *drop_count, char **map, int width, int height) {
     int idx = find_entity(entities, count, target_x, target_y);
     if (idx == -1) return 0;
 
@@ -108,21 +140,27 @@ int entity_interact(Entity *entities, int count, Player *p, int target_x, int ta
     p->stamina -= 2;
     if (p->stamina < 0) p->stamina = 0;
 
-    if (e->type == ENT_TREE || e->type == ENT_ROCK) {
+    if (e->type == ENT_TREE || e->type == ENT_ROCK || e->type == ENT_STONE) {
         e->hp -= p->attack;
         if (e->hp <= 0) {
             e->is_alive = 0;
             if (e->type == ENT_TREE) {
-                spawn_drop(drops, drop_count, e->x, e->y, ITEM_WOOD, 1);
+                spawn_drop(drops, drop_count, map, width, height, e->x, e->y, ITEM_WOOD, 1);
                 sprintf(g_last_event, "Хрясь! Дерево упало. Подберите бревно (L).");
-            } else {
+            } else if (e->type == ENT_ROCK) {
                 int amount = 2 + rand() % 2;
-                spawn_drop(drops, drop_count, e->x, e->y, ITEM_STONE, amount);
+                spawn_drop(drops, drop_count, map, width, height, e->x, e->y, ITEM_STONE, amount);
                 sprintf(g_last_event, "БАБАХ! Валун разлетелся на %d камня(ей).", amount);
+            } else if (e->type == ENT_STONE) {
+                spawn_drop(drops, drop_count, map, width, height, e->x, e->y, ITEM_STONE, 1);
+                sprintf(g_last_event, "Бам! Камень разбился. Подберите камень (S).");
             }
         } else {
-            sprintf(g_last_event, "Бам! %s трещит. Осталось прочности: %d", 
-                    (e->type == ENT_TREE ? "Дерево" : "Валун"), e->hp);
+            const char *name = "камень";
+            if (e->type == ENT_TREE) name = "Дерево";
+            else if (e->type == ENT_ROCK) name = "Валун";
+            else if (e->type == ENT_STONE) name = "Камень";
+            sprintf(g_last_event, "Бам! %s трещит. Осталось: %d", name, e->hp);
         }
         return 1;
     }
@@ -143,7 +181,7 @@ int entity_interact(Entity *entities, int count, Player *p, int target_x, int ta
         if (e->hp <= 0) {
             e->is_alive = 0;
             int gold_amount = 1 + rand() % 3; 
-            spawn_drop(drops, drop_count, e->x, e->y, ITEM_GOLD, gold_amount);
+            spawn_drop(drops, drop_count, map, width, height, e->x, e->y, ITEM_GOLD, gold_amount);
             sprintf(g_last_event, "БОНЬК! Монстр повержен. Выронил золото (G).");
         } else {
             int monster_dmg = e->attack - (p->defense / 2);

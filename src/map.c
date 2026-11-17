@@ -55,21 +55,22 @@ Map* map_create(int floor) {
     int obstacle_chance = TOWER_OBSTACLE_MIN +
         rand() % (TOWER_OBSTACLE_MAX - TOWER_OBSTACLE_MIN + 1);
 
-    // Генерация стен и декоративных камней (R)
     if (m->split_vertical) {
         m->split_pos = m->width / 2;
         for (int y = 1; y < m->height - 1; y++) {
             for (int x = 1; x < m->split_pos; x++) {
                 int r = rand() % 100;
                 if (r < obstacle_chance) m->map[y][x] = TOWER_WALL;
-                else if (r < obstacle_chance + 5) m->map[y][x] = 'R'; // Валуны
+                else if (r < obstacle_chance + 10) m->map[y][x] = '#';
+                else if (r < obstacle_chance + 15) m->map[y][x] = 'R';
             }
         }
         for (int y = 1; y < m->height - 1; y++) {
             for (int x = m->split_pos + 1; x < m->width - 1; x++) {
                 int r = rand() % 100;
                 if (r < obstacle_chance) m->map[y][x] = TOWER_WALL;
-                else if (r < obstacle_chance + 5) m->map[y][x] = 'R';
+                else if (r < obstacle_chance + 10) m->map[y][x] = '#';
+                else if (r < obstacle_chance + 15) m->map[y][x] = 'R';
             }
         }
         for (int y = 0; y < m->height; y++) m->map[y][m->split_pos] = TOWER_MIRROR;
@@ -79,14 +80,16 @@ Map* map_create(int floor) {
             for (int x = 1; x < m->width - 1; x++) {
                 int r = rand() % 100;
                 if (r < obstacle_chance) m->map[y][x] = TOWER_WALL;
-                else if (r < obstacle_chance + 5) m->map[y][x] = 'R';
+                else if (r < obstacle_chance + 10) m->map[y][x] = '#';
+                else if (r < obstacle_chance + 15) m->map[y][x] = 'R';
             }
         }
         for (int y = m->split_pos + 1; y < m->height - 1; y++) {
             for (int x = 1; x < m->width - 1; x++) {
                 int r = rand() % 100;
                 if (r < obstacle_chance) m->map[y][x] = TOWER_WALL;
-                else if (r < obstacle_chance + 5) m->map[y][x] = 'R';
+                else if (r < obstacle_chance + 10) m->map[y][x] = '#';
+                else if (r < obstacle_chance + 15) m->map[y][x] = 'R';
             }
         }
         for (int x = 0; x < m->width; x++) m->map[m->split_pos][x] = TOWER_MIRROR_H;
@@ -123,7 +126,6 @@ Map* map_create(int floor) {
     if (m->split_vertical) { m->mirror_hero_x = m->width - 1 - m->hero_x; m->mirror_hero_y = m->hero_y; }
     else { m->mirror_hero_x = m->hero_x; m->mirror_hero_y = m->height - 1 - m->hero_y; }
 
-    // Генерация сущностей и массива для дропа
     m->entity_count = entity_generate(&m->entities, m->map, m->width, m->height, floor);
     m->drops = (Drop*)malloc(MAX_DROPS * sizeof(Drop));
     m->drop_count = 0;
@@ -211,9 +213,15 @@ int map_move(Map *m, char dir) {
 
     if (nx < 0 || nx >= m->width || ny < 0 || ny >= m->height) return 0;
 
+    // Проверка на живую сущность (чтобы не наступить на камень/дерево)
+    for (int i = 0; i < m->entity_count; i++) {
+        if (m->entities[i].is_alive && m->entities[i].x == nx && m->entities[i].y == ny) {
+            return 0;
+        }
+    }
+
     char cell = m->map[ny][nx];
-    // Если это стена, зеркало или декоративный камень '#', то ходить нельзя
-    if (cell == TOWER_WALL || cell == TOWER_ROCK || cell == TOWER_MIRROR || cell == TOWER_MIRROR_H) return 0;
+    if (cell == TOWER_WALL || cell == TOWER_MIRROR || cell == TOWER_MIRROR_H) return 0;
 
     if (!m->mirror_broken) {
         if (m->split_vertical && nx > m->split_pos) return 0;

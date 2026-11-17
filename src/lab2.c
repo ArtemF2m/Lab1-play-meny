@@ -101,13 +101,11 @@ int main(void) {
                 int start_gold = player->gold;
                 
                 while (running) {
-                    // RENDER
                     map_print(m, player);
                     printf("Время: %02d:00 | Последнее событие: %s\n", g_hour, g_last_event);
                     printf("Управление: W/A/S/D — ход/атака, I — инвентарь, E — подобрать, Q — выход\n");
                     printf("Ход: ");
                     
-                    // INPUT
                     char buf[16];
                     if (!fgets(buf, sizeof(buf), stdin)) break;
                     char dir = buf[0];
@@ -133,7 +131,7 @@ int main(void) {
                         for (int i = 0; i < m->drop_count; i++) {
                             if (m->drops[i].is_alive && m->drops[i].x == m->hero_x && m->drops[i].y == m->hero_y) {
                                 if (m->drops[i].item_id == ITEM_GOLD) {
-                                    player->gold += 1; // 1 дроп G = 1 монета
+                                    player->gold += 1;
                                     sprintf(g_last_event, "Вы подобрали 1 золотой.");
                                 } else {
                                     int slot = -1;
@@ -161,7 +159,6 @@ int main(void) {
                         continue;
                     }
 
-                    // UPDATE
                     int nx = m->hero_x, ny = m->hero_y;
                     if (dir == 'W') ny--;
                     if (dir == 'S') ny++;
@@ -173,7 +170,7 @@ int main(void) {
                         continue;
                     }
 
-                    int interacted = entity_interact(m->entities, m->entity_count, player, nx, ny, m->drops, &m->drop_count);
+                    int interacted = entity_interact(m->entities, m->entity_count, player, nx, ny, m->drops, &m->drop_count, m->map, m->width, m->height);
 
                     if (!interacted) {
                         int moved = map_move(m, dir);
@@ -197,7 +194,7 @@ int main(void) {
                             }
                         } else {
                             char cell = m->map[ny][nx];
-                            if (cell == TOWER_WALL || cell == TOWER_ROCK) {
+                            if (cell == TOWER_WALL) {
                                 const char *phrases[] = {"Ой! Там стена.", "Ай! Ушибся.", "Тут непролазная чаща!"};
                                 sprintf(g_last_event, "%s", phrases[rand() % 3]);
                             }

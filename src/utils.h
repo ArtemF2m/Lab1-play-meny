@@ -23,9 +23,8 @@
 #define MAX_NAME_LEN 32
 
 // Символы карты
-#define TOWER_WALL       '*'
+#define TOWER_WALL       '*' // Дерево
 #define TOWER_FLOOR      '.'
-#define TOWER_ROCK       '#' 
 #define TOWER_MIRROR     '|'
 #define TOWER_MIRROR_H   '-'
 #define TOWER_STAIR_UP   'H'
@@ -34,10 +33,10 @@
 #define TOWER_HERO       '@'
 #define TOWER_MIRROR_HERO 'M'
 
-// Символы предметов на земле (когда выпадают)
-#define DROP_LOG   'L' // Бревно
-#define DROP_STONE 'S' // Камень
-#define DROP_GOLD  'G' // Золото
+// Символы выпавших предметов
+#define DROP_LOG   'L'
+#define DROP_STONE 'S'
+#define DROP_GOLD  'G'
 
 extern char g_item_names[MAX_ITEMS][MAX_NAME_LEN];
 extern char g_last_event[256];
