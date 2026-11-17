@@ -22,6 +22,9 @@ typedef struct {
     int    floor;
     Entity *entities;
     int    entity_count;
+    
+    Drop   *drops;      // Массив выпавших предметов
+    int    drop_count;  // Количество предметов на карте
 } Map;
 
 Map* map_create(int floor);

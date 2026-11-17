@@ -104,7 +104,7 @@ int main(void) {
                     // RENDER
                     map_print(m, player);
                     printf("Время: %02d:00 | Последнее событие: %s\n", g_hour, g_last_event);
-                    printf("Управление: W/A/S/D — ходьба/атака, I — инвентарь, E — подобрать обломки, Q — выход (на D)\n");
+                    printf("Управление: W/A/S/D — ход/атака, I — инвентарь, E — подобрать, Q — выход\n");
                     printf("Ход: ");
                     
                     // INPUT
@@ -128,6 +128,34 @@ int main(void) {
                         continue;
                     }
 
+                    if (dir == 'E') {
+                        int picked = 0;
+                        for (int i = 0; i < m->drop_count; i++) {
+                            if (m->drops[i].is_alive && m->drops[i].x == m->hero_x && m->drops[i].y == m->hero_y) {
+                                if (m->drops[i].item_id == ITEM_GOLD) {
+                                    player->gold += 1; // 1 дроп G = 1 монета
+                                    sprintf(g_last_event, "Вы подобрали 1 золотой.");
+                                } else {
+                                    int slot = -1;
+                                    for (int j = 0; j < INV_SIZE; j++) {
+                                        if (player->inventory[j] == ITEM_EMPTY) { slot = j; break; }
+                                    }
+                                    if (slot != -1) {
+                                        player->inventory[slot] = m->drops[i].item_id;
+                                        sprintf(g_last_event, "Вы подобрали: %s", g_item_names[m->drops[i].item_id]);
+                                    } else {
+                                        sprintf(g_last_event, "Рюкзак полон!");
+                                        picked = 1; break;
+                                    }
+                                }
+                                m->drops[i].is_alive = 0;
+                                picked = 1; break;
+                            }
+                        }
+                        if (!picked) sprintf(g_last_event, "Здесь нечего подбирать.");
+                        continue;
+                    }
+
                     if (dir != 'W' && dir != 'A' && dir != 'S' && dir != 'D') {
                         sprintf(g_last_event, "Неизвестная команда.");
                         continue;
@@ -145,8 +173,7 @@ int main(void) {
                         continue;
                     }
 
-                    // Взаимодействие с сущностями
-                    int interacted = entity_interact(m->entities, m->entity_count, player, nx, ny);
+                    int interacted = entity_interact(m->entities, m->entity_count, player, nx, ny, m->drops, &m->drop_count);
 
                     if (!interacted) {
                         int moved = map_move(m, dir);
@@ -169,13 +196,13 @@ int main(void) {
                                 sprintf(g_last_event, "Вы сделали шаг.");
                             }
                         } else {
-                            if (m->map[ny][nx] == TOWER_WALL) {
-                                const char *phrases[] = {"Ой! Там стена.", "Ай! Ушибся о камень.", "Тут непролазная чаща!"};
+                            char cell = m->map[ny][nx];
+                            if (cell == TOWER_WALL || cell == TOWER_ROCK) {
+                                const char *phrases[] = {"Ой! Там стена.", "Ай! Ушибся.", "Тут непролазная чаща!"};
                                 sprintf(g_last_event, "%s", phrases[rand() % 3]);
                             }
-                            else if (m->map[ny][nx] == TOWER_MIRROR || m->map[ny][nx] == TOWER_MIRROR_H) {
-                                sprintf(g_last_event, "Зеркало не пускает. Отражение смеется над вами.");
-                            }
+                            else if (cell == TOWER_MIRROR || cell == TOWER_MIRROR_H) 
+                                sprintf(g_last_event, "Зеркало не пускает.");
                         }
                     }
 
