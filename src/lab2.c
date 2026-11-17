@@ -104,7 +104,7 @@ int main(void) {
                     // RENDER
                     map_print(m, player);
                     printf("Время: %02d:00 | Последнее событие: %s\n", g_hour, g_last_event);
-                    printf("Управление: W/A/S/D — ходьба/атака, I — инвентарь, Q — выход\n");
+                    printf("Управление: W/A/S/D — ходьба/атака, I — инвентарь, E — подобрать обломки, Q — выход (на D)\n");
                     printf("Ход: ");
                     
                     // INPUT
@@ -169,9 +169,13 @@ int main(void) {
                                 sprintf(g_last_event, "Вы сделали шаг.");
                             }
                         } else {
-                            if (m->map[ny][nx] == TOWER_WALL) sprintf(g_last_event, "Там стена.");
-                            else if (m->map[ny][nx] == TOWER_MIRROR || m->map[ny][nx] == TOWER_MIRROR_H) 
-                                sprintf(g_last_event, "Зеркало не пускает.");
+                            if (m->map[ny][nx] == TOWER_WALL) {
+                                const char *phrases[] = {"Ой! Там стена.", "Ай! Ушибся о камень.", "Тут непролазная чаща!"};
+                                sprintf(g_last_event, "%s", phrases[rand() % 3]);
+                            }
+                            else if (m->map[ny][nx] == TOWER_MIRROR || m->map[ny][nx] == TOWER_MIRROR_H) {
+                                sprintf(g_last_event, "Зеркало не пускает. Отражение смеется над вами.");
+                            }
                         }
                     }
 

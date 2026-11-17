@@ -121,16 +121,21 @@ int entity_interact(Entity *entities, int count, Player *p, int target_x, int ta
         if (player_dmg < 1) player_dmg = 1;
         e->hp -= player_dmg;
         
-        if (e->hp <= 0) {
+                if (e->hp <= 0) {
             e->is_alive = 0;
             int gold_reward = 10 + rand() % 15;
             p->gold += gold_reward;
-            sprintf(g_last_event, "Вы победили монстра! Получено %d золота.", gold_reward);
+            sprintf(g_last_event, "БОНЬК! Монстр повержен. Вы получили %d золота.", gold_reward);
         } else {
             int monster_dmg = e->attack - (p->defense / 2);
             if (monster_dmg < 1) monster_dmg = 1;
             p->hp -= monster_dmg;
-            sprintf(g_last_event, "Вы ударили монстра. Он ответил на %d урона.", monster_dmg);
+            
+            if (monster_dmg >= 5) {
+                sprintf(g_last_event, "Ай! Монстр сильно укусил (-%d HP).", monster_dmg);
+            } else {
+                sprintf(g_last_event, "Ой! Монстр чехнул на вас (-%d HP).", monster_dmg);
+            }
         }
         return 1;
     }
