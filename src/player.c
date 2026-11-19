@@ -1,6 +1,24 @@
 #include "player.h"
 #include <stdio.h>
 
+void player_get_item_stats(int item_id, int *hp_bonus, int *stamina_bonus, EquipSlot *slot) {
+    *hp_bonus = 0;
+    *stamina_bonus = 0;
+    *slot = SLOT_HEAD;
+
+    if (item_id == ITEM_HELMET) {
+        *hp_bonus = 20;
+        *slot = SLOT_HEAD;
+    } else if (item_id == ITEM_CHEST) {
+        *hp_bonus = 30;
+        *stamina_bonus = 10;
+        *slot = SLOT_BODY;
+    } else if (item_id == ITEM_BOOTS) {
+        *stamina_bonus = 10;
+        *slot = SLOT_FEET;
+    }
+}
+
 Player* player_create(void) {
     Player *p = (Player*)malloc(sizeof(Player));
     if (!p) return NULL;
@@ -14,18 +32,14 @@ Player* player_create(void) {
     p->max_stamina = 50;
     p->stamina = 50;
     p->gold = 50;
-    p->x = 0; p->y = 0;
-    p->attack = 5;  // НОВОЕ
-    p->defense = 2; // НОВОЕ
+    p->attack = 5;
+    p->defense = 2;
 
     for (int i = 0; i < INV_SIZE; i++) p->inventory[i] = ITEM_EMPTY;
     p->inventory[0] = ITEM_PICKAXE; 
 
     for (int i = 0; i < SLOT_COUNT; i++) {
-        p->equip.is_equipped[i] = 0;
-        p->equip.items[i].hp_bonus = 0;
-        p->equip.items[i].stamina_bonus = 0;
-        strcpy(p->equip.items[i].name, "Нет");
+        p->equip.item_id[i] = ITEM_EMPTY;
     }
 
     printf("Создан персонаж: %s (Адрес: %p)\n", p->name, (void*)p);
@@ -45,9 +59,12 @@ void player_update_stats(Player *p) {
     p->max_stamina = 50;
 
     for (int i = 0; i < SLOT_COUNT; i++) {
-        if (p->equip.is_equipped[i]) {
-            p->max_hp += p->equip.items[i].hp_bonus;
-            p->max_stamina += p->equip.items[i].stamina_bonus;
+        if (p->equip.item_id[i] != ITEM_EMPTY) {
+            int hp_b, st_b;
+            EquipSlot dummy;
+            player_get_item_stats(p->equip.item_id[i], &hp_b, &st_b, &dummy);
+            p->max_hp += hp_b;
+            p->max_stamina += st_b;
         }
     }
 
@@ -62,51 +79,33 @@ void player_equip_menu(Player *p) {
     int choice;
     while (1) {
         printf("\n--- Управление снаряжением ---\n");
-        printf("[1] Надеть Шлем (Голова, +20 HP)\n");
-        printf("[2] Надеть Броню (Тело, +30 HP, +10 Стамина)\n");
-        printf("[3] Надеть Сапоги (Обувь, +10 Стамина)\n");
+        printf("[1] Надеть Шлем (ID: %d)\n", ITEM_HELMET);
+        printf("[2] Надеть Броню (ID: %d)\n", ITEM_CHEST);
+        printf("[3] Надеть Сапоги (ID: %d)\n", ITEM_BOOTS);
         printf("[4] Снять всё\n");
         printf("[0] Назад\n");
         printf("Выбор: ");
 
-        if (!read_int(&choice)) {
-            printf("Ошибка ввода.\n");
-            continue;
-        }
+        if (!read_int(&choice)) continue;
 
-        switch (choice) {
-            case 0: return;
-            case 1:
-                p->equip.is_equipped[SLOT_HEAD] = 1;
-                strcpy(p->equip.items[SLOT_HEAD].name, "Шлем");
-                p->equip.items[SLOT_HEAD].hp_bonus = 20;
-                p->equip.items[SLOT_HEAD].stamina_bonus = 0;
-                player_update_stats(p);
-                break;
-            case 2:
-                p->equip.is_equipped[SLOT_BODY] = 1;
-                strcpy(p->equip.items[SLOT_BODY].name, "Броня");
-                p->equip.items[SLOT_BODY].hp_bonus = 30;
-                p->equip.items[SLOT_BODY].stamina_bonus = 10;
-                player_update_stats(p);
-                break;
-            case 3:
-                p->equip.is_equipped[SLOT_FEET] = 1;
-                strcpy(p->equip.items[SLOT_FEET].name, "Сапоги");
-                p->equip.items[SLOT_FEET].hp_bonus = 0;
-                p->equip.items[SLOT_FEET].stamina_bonus = 10;
-                player_update_stats(p);
-                break;
-            case 4:
-                for (int i = 0; i < SLOT_COUNT; i++) {
-                    p->equip.is_equipped[i] = 0;
-                    p->equip.items[i].hp_bonus = 0;
-                    p->equip.items[i].stamina_bonus = 0;
-                    strcpy(p->equip.items[i].name, "Нет");
-                }
-                player_update_stats(p);
-                break;
-            default: printf("Нет такого пункта.\n");
+        if (choice == 0) return;
+        
+        if (choice >= 1 && choice <= 3) {
+            int item_id = (choice == 1) ? ITEM_HELMET : (choice == 2) ? ITEM_CHEST : ITEM_BOOTS;
+            
+            int hp_b, st_b;
+            EquipSlot slot;
+            player_get_item_stats(item_id, &hp_b, &st_b, &slot);
+            
+            p->equip.item_id[slot] = item_id;
+            printf("Вы надели: %s\n", g_item_names[item_id]);
+            player_update_stats(p);
+        } 
+        else if (choice == 4) {
+            for (int i = 0; i < SLOT_COUNT; i++) {
+                p->equip.item_id[i] = ITEM_EMPTY;
+            }
+            player_update_stats(p);
         }
     }
 }
@@ -122,9 +121,9 @@ void player_print_card(const Player *p) {
         printf("  Слот %d: %s\n", i, g_item_names[p->inventory[i]]);
     }
     printf("Экипировка:\n");
+    const char *slot_names[] = {"Голова", "Тело", "Обувь"};
     for (int i = 0; i < SLOT_COUNT; i++) {
-        const char *slot_name = (i == SLOT_HEAD) ? "Голова" : (i == SLOT_BODY) ? "Тело" : "Обувь";
-        printf("  %s: %s\n", slot_name, p->equip.is_equipped[i] ? p->equip.items[i].name : "Пусто");
+        printf("  %s: %s\n", slot_names[i], p->equip.item_id[i] == ITEM_EMPTY ? "Пусто" : g_item_names[p->equip.item_id[i]]);
     }
     printf("===============================\n");
 }

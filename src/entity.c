@@ -30,6 +30,7 @@ int entity_generate(Entity **entities, char **map, int width, int height, int fl
             else if (map[y][x] == '#') { type = ENT_STONE; sym = '#'; }
             else if (rand() % 100 < 5) { type = ENT_HEAL; sym = '+'; }
             else if (rand() % 100 < 10) { type = ENT_MONSTER; sym = 'M'; }
+            else if (rand() % 100 < 5) { type = ENT_CRITTER; sym = 'r'; } // Пугливая дичь
 
             if (type != ENT_NONE) {
                 Entity e;
@@ -60,13 +61,19 @@ int entity_generate(Entity **entities, char **map, int width, int height, int fl
                     e.hp = e.max_hp = 1;
                     e.drop_item_id = ITEM_FOOD;
                     e.attack = 0;
+                } else if (type == ENT_CRITTER) {
+                    e.hp = e.max_hp = 1;
+                    e.attack = 0;
+                    e.drop_item_id = ITEM_GOLD;
                 }
                 
                 (*entities)[count] = e;
                 count++;
                 
-                // Очищаем карту от старого символа
-                if (type != ENT_HEAL && type != ENT_MONSTER) map[y][x] = TOWER_FLOOR;
+                // Очищаем карту от старых символов
+                if (type != ENT_HEAL && type != ENT_MONSTER && type != ENT_CRITTER) {
+                    map[y][x] = TOWER_FLOOR;
+                }
             }
         }
     }
@@ -165,6 +172,25 @@ int entity_interact(Entity *entities, int count, Player *p, int target_x, int ta
         return 1;
     }
 
+    if (e->type == ENT_CRITTER) {
+        e->is_alive = 0;
+        int gold_reward = 20 + rand() % 30;
+        p->gold += gold_reward;
+        
+        int slot = -1;
+        for (int i = 0; i < INV_SIZE; i++) {
+            if (p->inventory[i] == ITEM_EMPTY) { slot = i; break; }
+        }
+        
+        if (slot != -1) {
+            p->inventory[slot] = ITEM_GOLD;
+            sprintf(g_last_event, "Вы поймали пугливого зверька! +%d золота и трофей.", gold_reward);
+        } else {
+            sprintf(g_last_event, "Вы поймали зверька! +%d золота, но рюкзак полон.", gold_reward);
+        }
+        return 1;
+    }
+
     if (e->type == ENT_HEAL) {
         e->is_alive = 0;
         p->hp += 20; if (p->hp > p->max_hp) p->hp = p->max_hp;
@@ -196,4 +222,42 @@ int entity_interact(Entity *entities, int count, Player *p, int target_x, int ta
         return 1;
     }
     return 1;
+}
+
+void entity_update_critters(Entity *entities, int count, char **map, int width, int height, int hero_x, int hero_y) {
+    for (int i = 0; i < count; i++) {
+        if (entities[i].is_alive && entities[i].type == ENT_CRITTER) {
+            int dist = abs(entities[i].x - hero_x) + abs(entities[i].y - hero_y);
+            
+            if (dist <= 3) { // Герой близко (в радиусе 3)
+                int dx = 0, dy = 0;
+                
+                if (entities[i].x > hero_x) dx = 1;
+                else if (entities[i].x < hero_x) dx = -1;
+                
+                if (entities[i].y > hero_y) dy = 1;
+                else if (entities[i].y < hero_y) dy = -1;
+                
+                if (dx == 0 && dy == 0) { dx = (rand() % 2 == 0) ? 1 : -1; }
+                
+                int nx = entities[i].x + dx;
+                int ny = entities[i].y + dy;
+                
+                int can_move = 1;
+                if (nx < 0 || nx >= width || ny < 0 || ny >= height) can_move = 0;
+                else if (map[ny][nx] == TOWER_WALL || map[ny][nx] == TOWER_MIRROR || map[ny][nx] == TOWER_MIRROR_H) can_move = 0;
+                
+                for (int j = 0; j < count; j++) {
+                    if (j != i && entities[j].is_alive && entities[j].x == nx && entities[j].y == ny) {
+                        can_move = 0; break;
+                    }
+                }
+                
+                if (can_move) {
+                    entities[i].x = nx;
+                    entities[i].y = ny;
+                }
+            }
+        }
+    }
 }

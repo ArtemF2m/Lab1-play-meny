@@ -12,24 +12,8 @@ typedef enum {
     SLOT_COUNT
 } EquipSlot;
 
-typedef enum {
-    TYPE_NONE,
-    TYPE_HEAD,
-    TYPE_BODY,
-    TYPE_FEET
-} ItemType;
-
 typedef struct {
-    int id;
-    char name[MAX_NAME_LEN];
-    ItemType type;
-    int hp_bonus;
-    int stamina_bonus;
-} Item;
-
-typedef struct {
-    Item items[SLOT_COUNT];
-    int is_equipped[SLOT_COUNT];
+    int item_id[SLOT_COUNT]; // МАССИВ ID (как в Minecraft) - ИСПРАВЛЕНО
 } Equipment;
 
 typedef struct {
@@ -40,8 +24,8 @@ typedef struct {
     int max_stamina;
     int gold;
     int x, y;
-    int attack;  // НОВОЕ
-    int defense; // НОВОЕ
+    int attack;
+    int defense;
     int inventory[INV_SIZE];
     Equipment equip;
 } Player;
@@ -51,5 +35,6 @@ void    player_free(Player **p);
 void    player_print_card(const Player *p);
 void    player_update_stats(Player *p);
 void    player_equip_menu(Player *p);
+void    player_get_item_stats(int item_id, int *hp_bonus, int *stamina_bonus, EquipSlot *slot);
 
 #endif

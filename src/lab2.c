@@ -200,6 +200,7 @@ int main(void) {
                             }
                             else if (cell == TOWER_MIRROR || cell == TOWER_MIRROR_H) 
                                 sprintf(g_last_event, "Зеркало не пускает.");
+                            entity_update_critters(m->entities, m->entity_count, m->map, m->width, m->height, m->hero_x, m->hero_y);
                         }
                     }
 

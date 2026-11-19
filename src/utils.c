@@ -23,7 +23,8 @@ void read_line(char *buf, int size) {
 void load_item_names(void) {
     const char *defaults[MAX_ITEMS] = {
         "Пусто", "Дерево", "Камень", "Семена", "Железо",
-        "Вода", "Еда", "Веревка", "Факел", "Золото", "Кирка", "Кожа"
+        "Вода", "Еда", "Веревка", "Факел", "Золото", 
+        "Кирка", "Кожа", "Шлем", "Броня", "Сапоги" // <-- ДОБАВИЛИ ЭТИ ТРИ
     };
     for (int i = 0; i < MAX_ITEMS; i++) {
         strncpy(g_item_names[i], defaults[i], MAX_NAME_LEN - 1);

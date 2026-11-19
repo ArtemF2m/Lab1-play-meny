@@ -3,7 +3,7 @@
 
 #include "player.h"
 
-#define MAX_ENTITIES 200 // Увеличили лимит
+#define MAX_ENTITIES 200
 #define MAX_DROPS 100
 
 typedef enum {
@@ -12,7 +12,8 @@ typedef enum {
     ENT_ROCK,     // Валун (R)
     ENT_STONE,    // Обычный камень (#)
     ENT_HEAL,
-    ENT_MONSTER
+    ENT_MONSTER,
+    ENT_CRITTER   // Пугливая дичь (r) - ЗАПЯТАЯ ПЕРЕД ЭТИМ НЕ НУЖНА, ЕСЛИ ЭТО ПОСЛЕДНИЙ ЭЛЕМЕНТ
 } EntityType;
 
 typedef struct {
@@ -37,5 +38,7 @@ void entity_free(Entity **entities);
 void spawn_drop(Drop *drops, int *drop_count, char **map, int width, int height, int x, int y, int item_id, int amount);
 
 int entity_interact(Entity *entities, int count, Player *p, int target_x, int target_y, Drop *drops, int *drop_count, char **map, int width, int height);
+
+void entity_update_critters(Entity *entities, int count, char **map, int width, int height, int hero_x, int hero_y);
 
 #endif

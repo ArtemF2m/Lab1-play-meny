@@ -18,8 +18,11 @@
 #define ITEM_GOLD    9
 #define ITEM_PICKAXE 10
 #define ITEM_LEATHER 11
+#define ITEM_HELMET  12 
+#define ITEM_CHEST   13
+#define ITEM_BOOTS   14
 
-#define MAX_ITEMS    12
+#define MAX_ITEMS    15
 #define MAX_NAME_LEN 32
 
 // Символы карты
@@ -27,11 +30,12 @@
 #define TOWER_FLOOR      '.'
 #define TOWER_MIRROR     '|'
 #define TOWER_MIRROR_H   '-'
-#define TOWER_STAIR_UP   'H'
-#define TOWER_STAIR_DOWN 'D'
-#define TOWER_SWITCH     'X'
-#define TOWER_HERO       '@'
-#define TOWER_MIRROR_HERO 'M'
+#define TOWER_STAIR_UP   'H'//лестнеца 
+#define TOWER_STAIR_DOWN 'D'//выход
+#define TOWER_SWITCH     'X'//рычаг 
+#define TOWER_HERO       '@'//герой собака
+#define TOWER_MIRROR_HERO 'M'//монстр
+#define TOWER_CRITTER 'r'
 
 // Символы выпавших предметов
 #define DROP_LOG   'L'
