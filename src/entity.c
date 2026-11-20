@@ -42,15 +42,15 @@ int entity_generate(Entity **entities, char **map, int width, int height, int fl
                 float mult = 1.0f + (floor - 1) * 0.2f; 
                 
                 if (type == ENT_TREE) {
-                    e.hp = e.max_hp = (int)(5 * mult);
+                    e.hp = e.max_hp = 50; // Увеличено с 5
                     e.drop_item_id = ITEM_WOOD;
                     e.attack = 0;
                 } else if (type == ENT_ROCK) {
-                    e.hp = e.max_hp = 9;
+                    e.hp = e.max_hp = 80; // Увеличено с 9
                     e.drop_item_id = ITEM_STONE;
                     e.attack = 0;
                 } else if (type == ENT_STONE) {
-                    e.hp = e.max_hp = 4;
+                    e.hp = e.max_hp = 35; // Увеличено с 4
                     e.drop_item_id = ITEM_STONE;
                     e.attack = 0;
                 } else if (type == ENT_MONSTER) {
@@ -159,7 +159,7 @@ int entity_interact(Entity *entities, int count, Player *p, int target_x, int ta
         
         if (!has_pickaxe) {
             sprintf(g_last_event, "Вам нужна кирка, чтобы добыть этот ресурс!");
-            return 1; 
+            return 1; // Тратим стамину, но ресурс не ломается
         }
 
         e->hp -= p->attack;
