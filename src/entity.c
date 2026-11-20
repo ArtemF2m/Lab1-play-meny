@@ -148,6 +148,20 @@ int entity_interact(Entity *entities, int count, Player *p, int target_x, int ta
     if (p->stamina < 0) p->stamina = 0;
 
     if (e->type == ENT_TREE || e->type == ENT_ROCK || e->type == ENT_STONE) {
+        // ПРОВЕРКА НА КИРКУ
+        int has_pickaxe = 0;
+        for (int i = 0; i < INV_SIZE; i++) {
+            if (p->inventory[i] == ITEM_PICKAXE) {
+                has_pickaxe = 1;
+                break;
+            }
+        }
+        
+        if (!has_pickaxe) {
+            sprintf(g_last_event, "Вам нужна кирка, чтобы добыть этот ресурс!");
+            return 1; 
+        }
+
         e->hp -= p->attack;
         if (e->hp <= 0) {
             e->is_alive = 0;
