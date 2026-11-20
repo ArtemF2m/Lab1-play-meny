@@ -159,6 +159,7 @@ int main(void) {
                         continue;
                     }
 
+                    // --- UPDATE ---
                     int nx = m->hero_x, ny = m->hero_y;
                     if (dir == 'W') ny--;
                     if (dir == 'S') ny++;
@@ -167,6 +168,7 @@ int main(void) {
 
                     if (nx < 0 || nx >= m->width || ny < 0 || ny >= m->height) {
                         sprintf(g_last_event, "Там край карты.");
+                        entity_update_critters(m->entities, m->entity_count, m->map, m->width, m->height, m->hero_x, m->hero_y);
                         continue;
                     }
 
@@ -200,9 +202,11 @@ int main(void) {
                             }
                             else if (cell == TOWER_MIRROR || cell == TOWER_MIRROR_H) 
                                 sprintf(g_last_event, "Зеркало не пускает.");
-                            entity_update_critters(m->entities, m->entity_count, m->map, m->width, m->height, m->hero_x, m->hero_y);
                         }
                     }
+
+                    // ВСЕГДА обновляем зверьков в конце хода
+                    entity_update_critters(m->entities, m->entity_count, m->map, m->width, m->height, m->hero_x, m->hero_y);
 
                     if (player->hp <= 0 || player->stamina <= 0) {
                         printf("Вы упали без сил! Эвакуация...\n");
