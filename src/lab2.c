@@ -103,7 +103,7 @@ int main(void) {
                 while (running) {
                     map_print(m, player);
                     printf("Время: %02d:00 | Последнее событие: %s\n", g_hour, g_last_event);
-                    printf("Управление: W/A/S/D — ход/атака, I — инвентарь, E — подобрать, Q — выход\n");
+                    printf("Управление: W/A/S/D — ход/атака, I — инвентарь, E — подобрать, U — выпить чай, Q — выход\n");
                     printf("Ход: ");
                     
                     char buf[16];
@@ -154,12 +154,47 @@ int main(void) {
                         continue;
                     }
 
+                    if (dir == 'U') {
+                        int found_tea = -1;
+                        for (int i = 0; i < INV_SIZE; i++) {
+                            if (player->inventory[i] == ITEM_TEA_BLACK || 
+                                player->inventory[i] == ITEM_TEA_GREEN || 
+                                player->inventory[i] == ITEM_TEA_RASPBERRY) {
+                                found_tea = i;
+                                break;
+                            }
+                        }
+
+                        if (found_tea != -1) {
+                            int tea_id = player->inventory[found_tea];
+                            player->inventory[found_tea] = ITEM_EMPTY;
+
+                            if (tea_id == ITEM_TEA_BLACK) {
+                                player->stamina += 50;
+                                if (player->stamina > player->max_stamina) player->stamina = player->max_stamina;
+                                sprintf(g_last_event, "Вы выпили черный чай. +50 стамины.");
+                            } else if (tea_id == ITEM_TEA_GREEN) {
+                                player->stamina += 20;
+                                if (player->stamina > player->max_stamina) player->stamina = player->max_stamina;
+                                player->hp += 20;
+                                if (player->hp > player->max_hp) player->hp = player->max_hp;
+                                sprintf(g_last_event, "Вы выпили зеленый чай. +20 стамины, +20 HP.");
+                            } else if (tea_id == ITEM_TEA_RASPBERRY) {
+                                player->hp += 50;
+                                if (player->hp > player->max_hp) player->hp = player->max_hp;
+                                sprintf(g_last_event, "Вы выпили малиновый чай. +50 HP.");
+                            }
+                        } else {
+                            sprintf(g_last_event, "В рюкзаке нет чая!");
+                        }
+                        continue;
+                    }
+
                     if (dir != 'W' && dir != 'A' && dir != 'S' && dir != 'D') {
                         sprintf(g_last_event, "Неизвестная команда.");
                         continue;
                     }
 
-                    // --- UPDATE ---
                     int nx = m->hero_x, ny = m->hero_y;
                     if (dir == 'W') ny--;
                     if (dir == 'S') ny++;
@@ -205,7 +240,6 @@ int main(void) {
                         }
                     }
 
-                    // ВСЕГДА обновляем зверьков в конце хода
                     entity_update_critters(m->entities, m->entity_count, m->map, m->width, m->height, m->hero_x, m->hero_y);
 
                     if (player->hp <= 0 || player->stamina <= 0) {

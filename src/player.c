@@ -37,6 +37,7 @@ Player* player_create(void) {
 
     for (int i = 0; i < INV_SIZE; i++) p->inventory[i] = ITEM_EMPTY;
     p->inventory[0] = ITEM_PICKAXE; 
+    p->inventory[INV_SIZE - 1] = ITEM_TEA_BLACK; //ЧАААААААААААААААААААААААЙ
 
     for (int i = 0; i < SLOT_COUNT; i++) {
         p->equip.item_id[i] = ITEM_EMPTY;

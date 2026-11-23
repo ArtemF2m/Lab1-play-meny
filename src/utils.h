@@ -21,8 +21,11 @@
 #define ITEM_HELMET  12 
 #define ITEM_CHEST   13
 #define ITEM_BOOTS   14
+#define ITEM_TEA_BLACK 15 // +50 стамины
+#define ITEM_TEA_GREEN 16 // +20 стамины, +20 хп
+#define ITEM_TEA_RASPBERRY 17 // +50 хп
 
-#define MAX_ITEMS    15
+#define MAX_ITEMS    18
 #define MAX_NAME_LEN 32
 
 // Символы карты

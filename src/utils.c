@@ -24,14 +24,18 @@ void load_item_names(void) {
     const char *defaults[MAX_ITEMS] = {
         "Пусто", "Дерево", "Камень", "Семена", "Железо",
         "Вода", "Еда", "Веревка", "Факел", "Золото", 
-        "Кирка", "Кожа", "Шлем", "Броня", "Сапоги" // <-- ДОБАВИЛИ ЭТИ ТРИ
+        "Кирка", "Кожа", "Шлем", "Броня", "Сапоги",
+        "Чай_Черный", "Чай_Зеленый", "Чай_Малиновый"
     };
+    
     for (int i = 0; i < MAX_ITEMS; i++) {
         strncpy(g_item_names[i], defaults[i], MAX_NAME_LEN - 1);
         g_item_names[i][MAX_NAME_LEN - 1] = '\0';
     }
+    
     FILE *f = fopen("items.txt", "r");
     if (!f) return;
+    
     char line[128];
     while (fgets(line, sizeof(line), f)) {
         int id;

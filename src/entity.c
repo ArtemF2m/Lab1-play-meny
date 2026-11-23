@@ -189,7 +189,7 @@ int entity_interact(Entity *entities, int count, Player *p, int target_x, int ta
 
     if (e->type == ENT_CRITTER) {
         e->is_alive = 0;
-        int gold_reward = 20 + rand() % 30;
+        int gold_reward = 10 + rand() % 20; // Чуть меньше золота, так как теперь даём чай
         p->gold += gold_reward;
         
         int slot = -1;
@@ -198,14 +198,18 @@ int entity_interact(Entity *entities, int count, Player *p, int target_x, int ta
         }
         
         if (slot != -1) {
-            p->inventory[slot] = ITEM_GOLD;
-            sprintf(g_last_event, "Вы поймали пугливого зверька! +%d золота и трофей.", gold_reward);
+            // Выбираем случайный чай (15, 16 или 17)
+            int teas[] = {ITEM_TEA_BLACK, ITEM_TEA_GREEN, ITEM_TEA_RASPBERRY};
+            int random_tea = teas[rand() % 3];
+            
+            p->inventory[slot] = random_tea;
+            sprintf(g_last_event, "Вы поймали зверька! +%d золота и %s.", gold_reward, g_item_names[random_tea]);
         } else {
             sprintf(g_last_event, "Вы поймали зверька! +%d золота, но рюкзак полон.", gold_reward);
         }
         return 1;
     }
-
+    
     if (e->type == ENT_HEAL) {
         e->is_alive = 0;
         p->hp += 20; if (p->hp > p->max_hp) p->hp = p->max_hp;
