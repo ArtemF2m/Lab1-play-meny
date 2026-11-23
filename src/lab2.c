@@ -130,21 +130,20 @@ int main(void) {
                         int picked = 0;
                         for (int i = 0; i < m->drop_count; i++) {
                             if (m->drops[i].is_alive && m->drops[i].x == m->hero_x && m->drops[i].y == m->hero_y) {
-                                if (m->drops[i].item_id == ITEM_GOLD) {
-                                    player->gold += 1;
-                                    sprintf(g_last_event, "Вы подобрали 1 золотой.");
-                                } else {
-                                    int slot = -1;
-                                    for (int j = 0; j < INV_SIZE; j++) {
-                                        if (player->inventory[j] == ITEM_EMPTY) { slot = j; break; }
-                                    }
-                                    if (slot != -1) {
-                                        player->inventory[slot] = m->drops[i].item_id;
-                                        sprintf(g_last_event, "Вы подобрали: %s", g_item_names[m->drops[i].item_id]);
+                                int slot = -1;
+                                for (int j = 0; j < INV_SIZE; j++) {
+                                    if (player->inventory[j] == ITEM_EMPTY) { slot = j; break; }
+                                }
+                                if (slot != -1) {
+                                    player->inventory[slot] = m->drops[i].item_id;
+                                    if (m->drops[i].item_id == ITEM_GOLD) {
+                                        sprintf(g_last_event, "Вы подобрали золото в рюкзак (G).");
                                     } else {
-                                        sprintf(g_last_event, "Рюкзак полон!");
-                                        picked = 1; break;
+                                        sprintf(g_last_event, "Вы подобрали: %s", g_item_names[m->drops[i].item_id]);
                                     }
+                                } else {
+                                    sprintf(g_last_event, "Рюкзак полон!");
+                                    picked = 1; break;
                                 }
                                 m->drops[i].is_alive = 0;
                                 picked = 1; break;
@@ -167,7 +166,7 @@ int main(void) {
 
                         if (found_tea != -1) {
                             int tea_id = player->inventory[found_tea];
-                            player->inventory[found_tea] = ITEM_EMPTY;
+                            player->inventory[found_tea] = ITEM_EMPTY; 
 
                             if (tea_id == ITEM_TEA_BLACK) {
                                 player->stamina += 50;
@@ -185,7 +184,7 @@ int main(void) {
                                 sprintf(g_last_event, "Вы выпили малиновый чай. +50 HP.");
                             }
                         } else {
-                            sprintf(g_last_event, "В рюкзаке нет чая!");
+                            sprintf(g_last_event, "В рюкзаке нет святого чая!");
                         }
                         continue;
                     }

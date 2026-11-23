@@ -190,6 +190,11 @@ void map_print(const Map *m, const Player *p) {
                             if (m->drops[i].item_id == ITEM_WOOD) to_print = DROP_LOG;
                             else if (m->drops[i].item_id == ITEM_STONE) to_print = DROP_STONE;
                             else if (m->drops[i].item_id == ITEM_GOLD) to_print = DROP_GOLD;
+                            else if (m->drops[i].item_id == ITEM_TEA_BLACK || 
+                                     m->drops[i].item_id == ITEM_TEA_GREEN || 
+                                     m->drops[i].item_id == ITEM_TEA_RASPBERRY) {
+                                to_print = DROP_TEA;
+                            }
                             break;
                         }
                     }

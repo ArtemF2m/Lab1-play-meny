@@ -38,12 +38,13 @@
 #define TOWER_SWITCH     'X'//рычаг 
 #define TOWER_HERO       '@'//герой собака
 #define TOWER_MIRROR_HERO 'M'//монстр
-#define TOWER_CRITTER 'r'
+#define TOWER_CRITTER 'r' //зверёк
 
 // Символы выпавших предметов
 #define DROP_LOG   'L'
 #define DROP_STONE 'S'
-#define DROP_GOLD  'G'
+#define DROP_GOLD  'G' //голда 50 10 1 
+#define DROP_TEA   'U' // ЧАААААААААААААААААААЙ
 
 extern char g_item_names[MAX_ITEMS][MAX_NAME_LEN];
 extern char g_last_event[256];

@@ -189,27 +189,19 @@ int entity_interact(Entity *entities, int count, Player *p, int target_x, int ta
 
     if (e->type == ENT_CRITTER) {
         e->is_alive = 0;
-        int gold_reward = 10 + rand() % 20; // Чуть меньше золота, так как теперь даём чай
-        p->gold += gold_reward;
         
-        int slot = -1;
-        for (int i = 0; i < INV_SIZE; i++) {
-            if (p->inventory[i] == ITEM_EMPTY) { slot = i; break; }
-        }
+        // Спавним золото
+        spawn_drop(drops, drop_count, map, width, height, e->x, e->y, ITEM_GOLD, 1, entities, count);
         
-        if (slot != -1) {
-            // Выбираем случайный чай (15, 16 или 17)
-            int teas[] = {ITEM_TEA_BLACK, ITEM_TEA_GREEN, ITEM_TEA_RASPBERRY};
-            int random_tea = teas[rand() % 3];
-            
-            p->inventory[slot] = random_tea;
-            sprintf(g_last_event, "Вы поймали зверька! +%d золота и %s.", gold_reward, g_item_names[random_tea]);
-        } else {
-            sprintf(g_last_event, "Вы поймали зверька! +%d золота, но рюкзак полон.", gold_reward);
-        }
+        // Выбираем случайный чай и спавним его
+        int teas[] = {ITEM_TEA_BLACK, ITEM_TEA_GREEN, ITEM_TEA_RASPBERRY};
+        int random_tea = teas[rand() % 3];
+        spawn_drop(drops, drop_count, map, width, height, e->x, e->y, random_tea, 1, entities, count);
+        
+        sprintf(g_last_event, "Вы убили бедного зверька который пил чай:< Бедняга выронил золото и чай.");
         return 1;
     }
-    
+
     if (e->type == ENT_HEAL) {
         e->is_alive = 0;
         p->hp += 20; if (p->hp > p->max_hp) p->hp = p->max_hp;
@@ -226,8 +218,9 @@ int entity_interact(Entity *entities, int count, Player *p, int target_x, int ta
         if (e->hp <= 0) {
             e->is_alive = 0;
             int gold_amount = 1 + rand() % 3; 
-            spawn_drop(drops, drop_count, map, width, height, e->x, e->y, ITEM_GOLD, gold_amount, entities, count);
-            sprintf(g_last_event, "БОНЬК! Монстр повержен. Выронил золото (G).");
+            spawn_drop(drops, drop_count, map, width, height, e->x, e->y, ITEM_GOLD, 1, entities, count);
+            // Здесь больше нет ошибочного вызова random_tea
+            sprintf(g_last_event, "БОНЬК! Вы убили родителя зверька.Оно уронило золото.");
         } else {
             int monster_dmg = e->attack - (p->defense / 2);
             if (monster_dmg < 1) monster_dmg = 1;
