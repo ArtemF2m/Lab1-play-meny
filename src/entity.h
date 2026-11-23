@@ -35,7 +35,7 @@ typedef struct {
 int entity_generate(Entity **entities, char **map, int width, int height, int floor);
 void entity_free(Entity **entities);
 
-void spawn_drop(Drop *drops, int *drop_count, char **map, int width, int height, int x, int y, int item_id, int amount);
+void spawn_drop(Drop *drops, int *drop_count, char **map, int width, int height, int x, int y, int item_id, int amount, Entity *entities, int entity_count);
 
 int entity_interact(Entity *entities, int count, Player *p, int target_x, int target_y, Drop *drops, int *drop_count, char **map, int width, int height);
 
