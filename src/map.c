@@ -126,9 +126,51 @@ Map* map_create(int floor) {
     if (m->split_vertical) { m->mirror_hero_x = m->width - 1 - m->hero_x; m->mirror_hero_y = m->hero_y; }
     else { m->mirror_hero_x = m->hero_x; m->mirror_hero_y = m->height - 1 - m->hero_y; }
 
+    // 1. Сначала генерируем сущности (деревья, камни, монстры, зверьки)
     m->entity_count = entity_generate(&m->entities, m->map, m->width, m->height, floor);
+    
+    // 2. Выделяем память под дропы
     m->drops = (Drop*)malloc(MAX_DROPS * sizeof(Drop));
     m->drop_count = 0;
+
+    // 3. Спавним траву как дроп (от 5 до 15 штук)
+    int grass_count = 5 + rand() % 11; 
+    for (int i = 0; i < grass_count; i++) {
+        int gx, gy;
+        int placed_grass = 0;
+        for (int attempts = 0; attempts < 100 && !placed_grass; attempts++) {
+            gx = 1 + rand() % (m->width - 2);
+            gy = 1 + rand() % (m->height - 2);
+            
+            // Проверяем, что клетка пустая
+            if (m->map[gy][gx] != TOWER_FLOOR) continue;
+            
+            // Проверяем, нет ли там сущности
+            int occupied = 0;
+            for (int j = 0; j < m->entity_count; j++) {
+                if (m->entities[j].is_alive && m->entities[j].x == gx && m->entities[j].y == gy) {
+                    occupied = 1; break;
+                }
+            }
+            if (occupied) continue;
+            
+            // Проверяем, нет ли там другого дропа
+            for (int j = 0; j < m->drop_count; j++) {
+                if (m->drops[j].x == gx && m->drops[j].y == gy) {
+                    occupied = 1; break;
+                }
+            }
+            if (occupied) continue;
+            
+            // Спавним траву как дроп
+            m->drops[m->drop_count].x = gx;
+            m->drops[m->drop_count].y = gy;
+            m->drops[m->drop_count].item_id = ITEM_GRASS;
+            m->drops[m->drop_count].is_alive = 1;
+            m->drop_count++;
+            placed_grass = 1;
+        }
+    }
 
     return m;
 }
@@ -177,6 +219,7 @@ void map_print(const Map *m, const Player *p) {
                 to_print = TOWER_HERO;
             } else {
                 int found = 0;
+                // Проверяем сущности
                 for (int i = 0; i < m->entity_count; i++) {
                     if (m->entities[i].is_alive && m->entities[i].x == x && m->entities[i].y == y) {
                         to_print = m->entities[i].symbol;
@@ -184,12 +227,14 @@ void map_print(const Map *m, const Player *p) {
                         break;
                     }
                 }
+                // Если нет сущности, проверяем дропы
                 if (!found) {
                     for (int i = 0; i < m->drop_count; i++) {
                         if (m->drops[i].is_alive && m->drops[i].x == x && m->drops[i].y == y) {
                             if (m->drops[i].item_id == ITEM_WOOD) to_print = DROP_LOG;
                             else if (m->drops[i].item_id == ITEM_STONE) to_print = DROP_STONE;
                             else if (m->drops[i].item_id == ITEM_GOLD) to_print = DROP_GOLD;
+                            else if (m->drops[i].item_id == ITEM_GRASS) to_print = 'w'; // Трава
                             else if (m->drops[i].item_id == ITEM_TEA_BLACK || 
                                      m->drops[i].item_id == ITEM_TEA_GREEN || 
                                      m->drops[i].item_id == ITEM_TEA_RASPBERRY) {
@@ -218,7 +263,7 @@ int map_move(Map *m, char dir) {
 
     if (nx < 0 || nx >= m->width || ny < 0 || ny >= m->height) return 0;
 
-    // Проверка на живую сущность (чтобы не наступить на камень/дерево)
+    // Проверка на живую сущность 
     for (int i = 0; i < m->entity_count; i++) {
         if (m->entities[i].is_alive && m->entities[i].x == nx && m->entities[i].y == ny) {
             return 0;

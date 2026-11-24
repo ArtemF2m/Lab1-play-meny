@@ -13,7 +13,8 @@ typedef enum {
     ENT_STONE,    // Обычный камень (#)
     ENT_HEAL,
     ENT_MONSTER,
-    ENT_CRITTER   // Пугливая дичь (r) - ЗАПЯТАЯ ПЕРЕД ЭТИМ НЕ НУЖНА, ЕСЛИ ЭТО ПОСЛЕДНИЙ ЭЛЕМЕНТ
+    ENT_CRITTER,   // Пугливая дичь (r)
+    ENT_GRASS    //травка 
 } EntityType;
 
 typedef struct {

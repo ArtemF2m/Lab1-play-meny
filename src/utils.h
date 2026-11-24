@@ -24,8 +24,9 @@
 #define ITEM_TEA_BLACK 15 // +50 стамины
 #define ITEM_TEA_GREEN 16 // +20 стамины, +20 хп
 #define ITEM_TEA_RASPBERRY 17 // +50 хп
+#define ITEM_GRASS 18
 
-#define MAX_ITEMS    18
+#define MAX_ITEMS    19
 #define MAX_NAME_LEN 32
 
 // Символы карты
@@ -39,6 +40,7 @@
 #define TOWER_HERO       '@'//герой собака
 #define TOWER_MIRROR_HERO 'M'//монстр
 #define TOWER_CRITTER 'r' //зверёк
+#define TOWER_GRASS 'w' // Трава
 
 // Символы выпавших предметов
 #define DROP_LOG   'L'
