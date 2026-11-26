@@ -13,7 +13,7 @@ typedef enum {
 } EquipSlot;
 
 typedef struct {
-    int item_id[SLOT_COUNT]; // МАССИВ ID (как в Minecraft) - ИСПРАВЛЕНО
+    int item_id[SLOT_COUNT];
 } Equipment;
 
 typedef struct {

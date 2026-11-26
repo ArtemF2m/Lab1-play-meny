@@ -25,8 +25,9 @@
 #define ITEM_TEA_GREEN 16 // +20 стамины, +20 хп
 #define ITEM_TEA_RASPBERRY 17 // +50 хп
 #define ITEM_GRASS 18
-
-#define MAX_ITEMS    19
+#define ITEM_BIG_BODY   19 // O
+#define ITEM_SMALL_BODY 20 // 0
+#define MAX_ITEMS    21
 #define MAX_NAME_LEN 32
 
 // Символы карты
@@ -47,6 +48,8 @@
 #define DROP_STONE 'S'
 #define DROP_GOLD  'G' //голда 50 10 1 
 #define DROP_TEA   'U' // ЧАААААААААААААААААААЙ
+#define DROP_BIG_BODY   'O'
+#define DROP_SMALL_BODY '0'
 
 extern char g_item_names[MAX_ITEMS][MAX_NAME_LEN];
 extern char g_last_event[256];

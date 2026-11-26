@@ -190,15 +190,24 @@ int entity_interact(Entity *entities, int count, Player *p, int target_x, int ta
     if (e->type == ENT_CRITTER) {
         e->is_alive = 0;
         
-        // Спавним золото
+        // 1. Маленькое тело (0) ровно в центр
+        if (*drop_count < MAX_DROPS) {
+            drops[*drop_count].x = e->x;
+            drops[*drop_count].y = e->y;
+            drops[*drop_count].item_id = ITEM_SMALL_BODY; // Маленькое тело
+            drops[*drop_count].is_alive = 1;
+            (*drop_count)++;
+        }
+
+        // 2. Золото
         spawn_drop(drops, drop_count, map, width, height, e->x, e->y, ITEM_GOLD, 1, entities, count);
         
-        // Выбираем случайный чай и спавним его
+        // 3. Чай
         int teas[] = {ITEM_TEA_BLACK, ITEM_TEA_GREEN, ITEM_TEA_RASPBERRY};
         int random_tea = teas[rand() % 3];
         spawn_drop(drops, drop_count, map, width, height, e->x, e->y, random_tea, 1, entities, count);
         
-        sprintf(g_last_event, "Вы убили бедного зверька который пил чай:< Бедняга выронил золото и чай.");
+        sprintf(g_last_event, "Вы убили бедного зверька который пил чай:< Бедняга поставил на пол чай золото сделал сальто и лёг на пол");
         return 1;
     }
 
@@ -217,19 +226,17 @@ int entity_interact(Entity *entities, int count, Player *p, int target_x, int ta
         
         if (e->hp <= 0) {
             e->is_alive = 0;
-            int gold_amount = 1 + rand() % 3; 
-            spawn_drop(drops, drop_count, map, width, height, e->x, e->y, ITEM_GOLD, 1, entities, count);
-            // Здесь больше нет ошибочного вызова random_tea
-            sprintf(g_last_event, "БОНЬК! Вы убили родителя зверька.Оно уронило золото.");
-        } else {
-            int monster_dmg = e->attack - (p->defense / 2);
-            if (monster_dmg < 1) monster_dmg = 1;
-            p->hp -= monster_dmg;
-            if (monster_dmg >= 5) {
-                sprintf(g_last_event, "Ай! Монстр сильно укусил (-%d HP).", monster_dmg);
-            } else {
-                sprintf(g_last_event, "Ой! Монстр чехнул на вас (-%d HP).", monster_dmg);
+            
+            if (*drop_count < MAX_DROPS) {
+                drops[*drop_count].x = e->x;
+                drops[*drop_count].y = e->y;
+                drops[*drop_count].item_id = ITEM_BIG_BODY;
+                drops[*drop_count].is_alive = 1;
+                (*drop_count)++;
             }
+            spawn_drop(drops, drop_count, map, width, height, e->x, e->y, ITEM_GOLD, 1, entities, count);
+            sprintf(g_last_event, "БОНЬК! Монстр повержен. Оставил большое тело (O) и золото.");
+        } else {
         }
         return 1;
     }

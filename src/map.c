@@ -234,7 +234,9 @@ void map_print(const Map *m, const Player *p) {
                             if (m->drops[i].item_id == ITEM_WOOD) to_print = DROP_LOG;
                             else if (m->drops[i].item_id == ITEM_STONE) to_print = DROP_STONE;
                             else if (m->drops[i].item_id == ITEM_GOLD) to_print = DROP_GOLD;
-                            else if (m->drops[i].item_id == ITEM_GRASS) to_print = 'w'; // Трава
+                            else if (m->drops[i].item_id == ITEM_GRASS) to_print = 'w';
+                            else if (m->drops[i].item_id == ITEM_BIG_BODY) to_print = 'O';
+                            else if (m->drops[i].item_id == ITEM_SMALL_BODY) to_print = '0';
                             else if (m->drops[i].item_id == ITEM_TEA_BLACK || 
                                      m->drops[i].item_id == ITEM_TEA_GREEN || 
                                      m->drops[i].item_id == ITEM_TEA_RASPBERRY) {
