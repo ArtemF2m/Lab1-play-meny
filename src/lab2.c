@@ -178,7 +178,7 @@ void adventure_loop(Player *player) {
             continue;
         }
 
-        if (dir == 'I') { player_print_card(player); continue; }
+        if (dir == 'I') { player_inventory_menu(player); continue; }
         if (dir == 'E') { action_pickup(m, player); continue; }
         if (dir == 'U') { action_drink_tea(player); continue; }
 
@@ -236,6 +236,7 @@ int main(void) {
         printf("[2] Карточка персонажа\n");
         printf("[3] Время и отдых\n");
         printf("[4] Управление снаряжением\n");
+        printf("[5] Инвентарь\n");
         printf("[10] Отправиться в приключение\n");
         printf("[0] Выход\n");
         printf("Выбор: ");
@@ -266,6 +267,10 @@ int main(void) {
             case 4:
                 if (!player) { printf("Сначала создайте персонажа!\n"); break; }
                 player_equip_menu(player);
+                break;
+            case 5:
+                if (!player) { printf("Сначала создайте персонажа!\n"); break; }
+                player_inventory_menu(player);
                 break;
             case 10:
                 if (!player) { printf("Сначала создайте персонажа!\n"); break; }

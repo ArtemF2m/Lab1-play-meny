@@ -36,5 +36,6 @@ void    player_print_card(const Player *p);
 void    player_update_stats(Player *p);
 void    player_equip_menu(Player *p);
 void    player_get_item_stats(int item_id, int *hp_bonus, int *stamina_bonus, EquipSlot *slot);
+void    player_inventory_menu(Player *p);
 
 #endif

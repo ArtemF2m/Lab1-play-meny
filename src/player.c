@@ -128,3 +128,68 @@ void player_print_card(const Player *p) {
     }
     printf("===============================\n");
 }
+void player_inventory_menu(Player *p) {
+    int choice;
+    while (1) {
+        printf("\n--- Инвентарь ---\n");
+        for (int i = 0; i < INV_SIZE; i++) {
+            printf("[%d] %s\n", i, g_item_names[p->inventory[i]]);
+        }
+        printf("[10] Выбросить предмет\n");
+        printf("[11] Использовать предмет (выпить чай)\n");
+        printf("[0] Назад\n");
+        printf("Выбор: ");
+        
+        if (!read_int(&choice)) continue;
+        
+        if (choice == 0) return;
+        
+        if (choice == 10) {
+            int slot;
+            printf("Какой слот выбросить? (0-%d): ", INV_SIZE - 1);
+            if (!read_int(&slot)) continue;
+            if (slot >= 0 && slot < INV_SIZE) {
+                if (p->inventory[slot] == ITEM_EMPTY) {
+                    printf("Этот слот уже пуст.\n");
+                } else {
+                    printf("Вы выбросили: %s\n", g_item_names[p->inventory[slot]]);
+                    p->inventory[slot] = ITEM_EMPTY;
+                }
+            } else {
+                printf("Неверный слот.\n");
+            }
+        } 
+        else if (choice == 11) {
+            int slot;
+            printf("Какой слот использовать? (0-%d): ", INV_SIZE - 1);
+            if (!read_int(&slot)) continue;
+            if (slot >= 0 && slot < INV_SIZE) {
+                int item_id = p->inventory[slot];
+                if (item_id == ITEM_EMPTY) {
+                    printf("Слот пуст.\n");
+                } else if (item_id == ITEM_TEA_BLACK) {
+                    p->stamina += 50;
+                    if (p->stamina > p->max_stamina) p->stamina = p->max_stamina;
+                    printf("Вы выпили черный чай. +50 стамины.\n");
+                    p->inventory[slot] = ITEM_EMPTY;
+                } else if (item_id == ITEM_TEA_GREEN) {
+                    p->stamina += 20;
+                    if (p->stamina > p->max_stamina) p->stamina = p->max_stamina;
+                    p->hp += 20;
+                    if (p->hp > p->max_hp) p->hp = p->max_hp;
+                    printf("Вы выпили зеленый чай. +20 стамины, +20 HP.\n");
+                    p->inventory[slot] = ITEM_EMPTY;
+                } else if (item_id == ITEM_TEA_RASPBERRY) {
+                    p->hp += 50;
+                    if (p->hp > p->max_hp) p->hp = p->max_hp;
+                    printf("Вы выпили малиновый чай. +50 HP.\n");
+                    p->inventory[slot] = ITEM_EMPTY;
+                } else {
+                    printf("Этот предмет нельзя использовать напрямую.\n");
+                }
+            } else {
+                printf("Неверный слот.\n");
+            }
+        }
+    }
+}
